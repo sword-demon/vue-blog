@@ -1,12 +1,23 @@
 ---
-title: Gin框架基础学习
-date: 2021-09-23 21:30
-permalink: '/gin_base'
-categories:
-  - go
+title: 'Gin框架基础学习'
+date: 2021-09-23 21:38:32
+# 永久链接
+# permalink: '/hello-world'
+# 文章访问密码
+# keys: '123'
+# 是否发布文章
+# publish: false
+# 置顶: 降序，可以按照 1, 2, 3, ... 来降低置顶文章的排列优先级
+# sticky: 1
+# sidebar: false
+# sidebarDepth: 2
+# isTimeLine: false
+# isShowComment: true
 tags:
-  - Gin
-  - Framework
+- 'Gin'
+- 'Framework'
+categories:
+- 'Go'
 ---
 
 `Gin` 是一个用Go语言编写的HTTP Web框架，它是一个类似于`martini` 但拥有更好性能的API框架，由`httprouter` ，速度提高了近40倍。
