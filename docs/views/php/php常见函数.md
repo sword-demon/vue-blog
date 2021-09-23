@@ -8,7 +8,7 @@ categories:
 tags:
  - helper
  - PHP
-publish: false
+publish: true
 ---
 
 
