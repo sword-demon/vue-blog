@@ -7,8 +7,6 @@ categories:
 tags:
   - Gin
   - Framework
-original: true
-sticky: 
 ---
 
 `Gin` 是一个用Go语言编写的HTTP Web框架，它是一个类似于`martini` 但拥有更好性能的API框架，由`httprouter` ，速度提高了近40倍。
