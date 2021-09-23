@@ -168,5 +168,5 @@ func main() {
 
 包初始化执行的顺序如下图：
 
-![image-20210921145405183](/assets/images/image-20210921145405183.png)
+![image-20210921145405183](/vue-blog/assets/images/image-20210921145405183.png)
 
