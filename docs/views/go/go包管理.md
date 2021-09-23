@@ -1,6 +1,6 @@
 ---
 title: 'Go包管理'
-date: 2020-10-27 19:51:41
+date: 2021-09-23 21:48
 # 永久链接
 permalink: '/gopackage'
 # 文章访问密码
