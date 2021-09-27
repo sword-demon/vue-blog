@@ -89,7 +89,7 @@ drf中重写了`as_view`和`dispatch`方法，就是在原来的django的功能�
 
 现在运行的一个页面
 
-![image-20210927212831528](/assets/images/drf_runtime.png)
+![image-20210927212831528](/vue-blog/assets/images/drf_runtime.png)
 
 
 
