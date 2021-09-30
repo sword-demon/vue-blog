@@ -494,3 +494,165 @@ def __getattr__(self, attr):
 request.method => self._request.method
 ```
 
+
+
+## 版本管理
+
+在restful规范中，后端的API需要体现版本
+
+`drf`框架中支持5种版本的设置
+
+
+
+>   第一个
+
+```python
+# views.py
+
+from rest_framework.versioning import QueryParameterVersioning
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class UserView(APIView):
+    versioning_class = QueryParameterVersioning
+
+    def get(self, request, *args, **kwargs):
+
+        print(request.version)
+        return Response({"code": 1000, "data": "xxx"})
+```
+
+```python
+# urls.py
+
+from django.urls import path
+from app01 import views
+
+urlpatterns = [
+    # path('admin/', admin.site.urls),
+
+    # path("api/<str:version>/users", views.users),
+    # path("api/<str:version>/users/<int:pk>", views.users),
+
+    path('api/users/', views.UserView.as_view()),
+]
+```
+
+在浏览器中输入地址：http://127.0.0.1:8000/api/users/?version=v1
+
+此时终端会输出一个对应的版本号：**v1**
+
+:::danger
+
+注意，浏览器输入的`version=v几`的`version`是固定的
+
+:::
+
+
+
+那么可以不可以修改呢，毕竟`version`要输入这么一长串
+
+:::details 看下`QueryParameterVersioning`的源码的父类`BaseVersioning`
+
+```python
+class BaseVersioning:
+    default_version = api_settings.DEFAULT_VERSION
+    allowed_versions = api_settings.ALLOWED_VERSIONS
+    version_param = api_settings.VERSION_PARAM
+```
+
+:::
+
+其中的`VERSION_PARAM`，我们可以拿出来放到配置文件里，我们重新设置一下内容
+
+```python
+# settings.py
+
+# 之前说的drf的框架的配置文件都放在这个里面
+REST_FRAMEWORK = {
+  "VERSION_PARAM": "v"
+}
+```
+
+写成这个时，后面浏览器写的时候传入的版本就得写：http://127.0.0.1:8000/api/users/?v=v1
+
+:::danger
+
+此时如果你还写成`version`就不行
+
+:::
+
+
+
+如果想设置一个默认值的版本，就是你不想写后面一串，如何设置一个默认值的版本？
+
+还是看上面的源码部分，里面有一个`DEFAULT_VERSION`看英文就知道是啥意思了。配置一下这个的默认值即可
+
+```python
+# settings.py
+
+REST_FRAMEWORK = {
+  "VERSION_PARAM": "v",
+  "DEFAULT_VERSION": "v1", # 设置默认版本为v1
+}
+```
+
+
+
+>   看到源码里还有一个`ALLOWED_VERSIONS`没用上，那肯定还是有用的啊，这个从字面上看就是可以允许的版本，我们可以进行限制一些版本名称
+
+```python
+# settings.py
+
+REST_FRAMEWORK = {
+  "VERSION_PARAM": "v",
+  "DEFAULT_VERSION": "v1", # 设置默认版本为v1
+  "ALLOWED_VERSIONS": ["v1", "v2", "v3"],
+}
+```
+
+:::danger
+
+此时浏览器只能传入`v1、v2、v3`，其余的就会出错
+
+:::
+
+
+
+### 省事教程
+
+此时，如果有多个视图，`versioning_class = QueryParameterVersioning`这一句是不是要在很多个视图类里都要写一遍。是的，很麻烦，`drf`还提供了一个解决办法。
+
+`全局配置`
+
+```python
+# settings.py
+
+REST_FRAMEWORK = {
+    "VERSION_PARAM": "v",
+    "DEFAULT_VERSION": "v1",  # 设置默认版本为v1
+    "ALLOWED_VERSIONS": ["v1", "v2", "v3"],
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.QueryParameterVersioning"
+}
+
+```
+
+:::details 查看源码位置
+
+```python
+class APIView(View):
+
+    # The following policies may be set at either globally, or per-view.
+    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+    parser_classes = api_settings.DEFAULT_PARSER_CLASSES
+    authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES
+    throttle_classes = api_settings.DEFAULT_THROTTLE_CLASSES
+    permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES
+    content_negotiation_class = api_settings.DEFAULT_CONTENT_NEGOTIATION_CLASS
+    metadata_class = api_settings.DEFAULT_METADATA_CLASS
+    versioning_class = api_settings.DEFAULT_VERSIONING_CLASS # 此处
+```
+
+:::
+
