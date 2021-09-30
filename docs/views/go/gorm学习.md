@@ -56,6 +56,10 @@ insert into userinfo values(1, "wujie", "男", "乒乓球");
 
 
 
+<!-- more -->
+
+
+
 ## 优缺点
 
 优点：
@@ -102,4 +106,169 @@ func main() {
 ```
 
 有的时候导入的时候驱动前面需要加上下划线，只是用到了它内部的一些初始化方法。
+
+
+
+CRUD简单案例
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+)
+
+type UserTable struct {
+	ID     uint
+	Name   string
+	Gender string
+	Hobby  string
+}
+
+func main() {
+
+	db, err := gorm.Open("mysql", "root:root@(127.0.0.1:3306)/db1?charset=utf8mb4&parseTime=True&loc=Local")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	// 创建表、自动迁移:把结构体和数据表进行对应
+	db.AutoMigrate(&UserTable{})
+
+	// 创建数据行
+	u1 := UserTable{1, "无解", "男", "乒乓球"}
+	db.Create(u1)
+
+	// 查询数据
+	var u UserTable
+	db.First(&u) // 把查询的对象保存到u里，要传指针  查询表中第一条数据
+	fmt.Printf("u:%#v\n", u)
+
+	// 更新
+	db.Model(&u).Update("hobby", "双色球")
+
+	// 删除
+	db.Delete(&u)
+}
+```
+
+
+
+## Model模型定义
+
+`gorm`内置了一个`gorm.Model`结构体。是包含了一个`ID、CreatedAt、UpdatedAt、DeletedAt`四个字段的结构体。
+
+```go
+// gorm.Model
+type Model struct {
+  ID uint `gorm:"primary_key"`
+  CreatedAt time.Time
+  UpdatedAt time.Time
+  DeletedAt time.Time
+}
+```
+
+嵌入到自己的模型中
+
+```go
+// 将它的四个字段注入到 User 模型中
+type User struct {
+  gorm.Model
+  Name string
+}
+```
+
+
+
+```go
+// User 定义模型
+type User struct {
+	gorm.Model
+	Name         string
+	Age          sql.NullInt64
+	Birthday     *time.Time
+	Email        string  `gorm:"type:varchar(100);unique_index"`
+	Role         string  `gorm:"size:255"`
+	MemberNumber *string `gorm:"unique;not null"` // 设置会员号 唯一且不为空
+	Num          int     `gorm:"AUTH_INCREMENT"`  // 设置自增
+	Address      string  `gorm:"index:addr"`      // 设置名为addr的索引
+	IgnoreMe     int     `gorm:"-"`               // 忽略本字段
+}
+```
+
+
+
+### 主键约定
+
+GORM默认会使用名为ID的字段作为表的主键
+
+```go
+type User struct {
+  ID string
+  Name string
+}
+
+// 使用别的名称作为主键
+type Admin struct {
+  AdminID int64 `gorm:"primary_key"`
+  Name string
+  Age int64
+}
+```
+
+
+
+### 表名
+
+表名默认就是结构体名称的负数
+
+驼峰转换为`_`进行连接且单词首字母小写
+
+```go
+// 生成的表为 users
+type User struct {
+  ID string
+  Name string
+}
+
+// 将User的表名设置为 `profiles`
+func (User) TableName() string {
+  return "profiles"
+}
+
+// 生成的表为 user_tables
+type UserTable struct {
+	ID     uint
+	Name   string
+	Gender string
+	Hobby  string
+}
+
+
+// 禁用默认表名的复数形式，设置为true，则没有复数
+db.SingularTable(true)
+```
+
+也可以通过`Table()`指定表名
+
+```go
+// 使用UserTable结构体创建一个名叫 wujie 的表
+db.Table("wujie").CreateTable(&UserTable{})
+```
+
+还支持更改默认表名称的规则：
+
+加一个表前缀
+
+```go
+// 表名规则修改
+	gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string {
+		return "prefix_" + defaultTableName
+	}
+```
+
+
 
