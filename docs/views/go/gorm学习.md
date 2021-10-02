@@ -16,7 +16,7 @@ tags:
 
 ## gorm学习
 
-https://gorm.io/zh_CN/docs/index.html
+[官网链接](https://gorm.io/zh_CN/docs/index.html)
 
 ORM => Object Relational Mapping  对象关系型映射
 
