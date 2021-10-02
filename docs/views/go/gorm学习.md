@@ -272,3 +272,103 @@ db.Table("wujie").CreateTable(&UserTable{})
 
 
 
+## GORM使用创建记录
+
+```go
+// 生成的表为 users
+type User struct {
+  Name string `gorm:"default:'无解'"`
+  Age int
+}
+
+func main() {
+  db, err := gorm.Open("mysql", "root:root@(127.0.0.1:3306)/db1?charset=utf8mb4&parseTime=True&loc=Local")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+  // 创建表
+  db.AutoMigrate(&User{})
+}
+```
+
+使用标签创建表的默认值
+
+此时创建的表语句的name字段就有一个默认值属性`default = '无解'`
+
+
+
+添加记录
+
+```go
+user := User{Age: 99, Name: ""}
+fmt.Println(db.NewRecord(&user)) // 判断主键是否为空 true
+db.Debug().Create(&user) // 在每个操作前加上 Debug方法会输出对应的SQL语句
+fmt.Println(db.NewRecord(&user)) // false
+```
+
+```sql
+insert into users("age") values (99);
+```
+
+如果对Name字段使用零值传入，此时的代码实际执行的SQL语句如上所述，它会排除零值字段Name，而在数据库中会使用设置的默认值`无解`作为Name字段的值。
+
+
+
+:::danger
+
+**注意：所有字段的零值，比如`0，"",false`或者它的零值，都不会保存到数据库内，的那会使用他们的默认值。如果想避免这种情况，可以考虑使用指针或实现`Scanner/Valuer`接口。**
+
+:::
+
+
+
+**使用指针的方式将零值存入数据库**
+
+```go
+// 使用指针
+type User struct {
+  Name *string `gorm:"default:'无解'"`
+  Age int
+}
+
+user := User{Age: 99, Name: new(string)}
+db.Create(&user) // 此时数据库中该条记录name的字段的值就是 ''
+```
+
+
+
+**使用Scanner/Valuer**
+
+```go
+// 使用 Scanner/Valuer
+type User struct {
+  Name sql.NullString `gorm:"default:'无解'"`
+  Age int
+}
+
+user := User{Name: sql.NullString{"", true}, Age: 18}
+db.Create(&user) // 此时数据库中该条记录name的字段的值就是 ''
+```
+
+`sql.NullString`实现了`Scanner/Valuer`的接口
+
+
+
+### 扩展创建选项
+
+例如`PostgreSQL`数据库中可以使用下面的方式实现合并插入，有则更新，无则插入
+
+```go
+// 为 Insert 语句添加扩展SQL选项
+db.Set("gorm:insert_option", "ON CONFLICT").Create(&product)
+
+// insert into products (name, code) values ("name", "code") ON CONFILICT;
+```
+
+就是MySQL中类似`replace into`的方式进行更新
+
+
+
+## GORM查询操作
+
