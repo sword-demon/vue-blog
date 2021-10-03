@@ -915,4 +915,9 @@ class UserView(APIView):
 
 使用`drf`框架开发后端的`API`接口时：
 
--   
+-   首先创建Django项目
+-   安装drf框架
+-   创建一个app专门来处理用户请求
+-   注册app
+-   设置版本
+-   编写视图类
