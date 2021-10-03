@@ -378,7 +378,7 @@ db.Set("gorm:insert_option", "ON CONFLICT").Create(&product)
 
 :::
 
-下面直接转自：https://www.liwenzhou.com/posts/Go/gorm_crud/
+下面直接转自：[七米老师的博客](https://www.liwenzhou.com/posts/Go/gorm_crud/)
 
 ### 一般查询
 
@@ -468,6 +468,101 @@ db.Where([]int64{20, 21, 22}).Find(&users)
 
 
 ### 其他还是去看官方文档吧
+
+
+
+### 修改Hooks中的值
+
+如果想修改`BeforeUpdate、BeforeSave`等`Hooks`中更新的值，你可以使用`scope.SetColumn`
+
+```go
+func (user *User) BeforeSave(scope *gorm.Scope) (err error) {
+	if pw, err := bcrypt.GenerateFromPassword(user.Password, 0); err == nil {
+		scope.SetColumn("EncryptedPassword", pw)
+	}
+}
+```
+
+
+
+## 删除
+
+删除记录
+
+**删除记录时，必须保证主键字段有值，GORM会根据主键去删除记录，如果主键为空，GORM会删除该model的所有记录**
+
+```go
+// 删除现有的记录
+db.Delete(&email)
+```
+
+```sql
+delete from emails where id = 10;
+```
+
+
+
+```go
+// 为删除sql添加额外的sql操作
+db.Set("gorm:delete_option", "OPTION (OPTIMIZE FOR UNKNOWN)").Delete(&email)
+```
+
+```sql
+delete from emails where id = 10 OPTION (OPTIMIZE FOR UNKNOWN);
+```
+
+
+
+使用特定条件去删除
+
+```go
+db.Where("email=?", "123@qq.com").Delete(Email{})
+
+
+db.Delete(Email{}, "email like ?", "%123@qq.com%")
+```
+
+```sql
+delete from emails where email like "%123@qq.com%";
+```
+
+
+
+### 软删除
+
+如果model有一个`DeletedAt`字段，将会自动获得软删除的功能，调用`Delete`方法时，记录不会真正的从数据库中删除，只会将`DeletedAt`字段的值设置为当前时间。
+
+```go
+db.Delete(&user);
+```
+
+```sql
+update users set deleted_at = "2021-10-02 10:22" where id = 1;
+```
+
+
+
+:::tip
+
+此时还想使用物理删除使用`Unscoped()`方法进行删除
+
+:::
+
+```go
+db.Unscoped().Delete(&user)
+```
+
+```sql
+delete from users where id = 1;
+```
+
+
+
+:::danger
+
+如果不喜欢软删除，在设计字段的时候，就不使用`gorm.Model`的结构体，自己定义字段
+
+:::
 
 
 
