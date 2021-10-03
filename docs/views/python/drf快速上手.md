@@ -514,7 +514,7 @@ request.method => self._request.method
 
 
 
->   第一个
+### GET请求获取
 
 ```python
 # views.py
@@ -666,3 +666,253 @@ class APIView(View):
 
 :::
 
+
+
+### URL路径传递(*)
+
+`urls.py`
+
+```python
+path('api/<str:version>/users/', views.UserView.as_view()),
+```
+
+此时视图函数内需要变更配置
+
+```python
+from rest_framework.versioning import URLPathVersioning
+
+
+class UserView(APIView):
+    versioning_class = URLPathVersioning
+
+    def get(self, request, *args, **kwargs):
+
+        print(request.version)
+        return Response({"code": 1000, "data": "xxx"})
+
+    def post(self, request, *args, **kwargs):
+        return Response({"code": 1000, "data": "xxx"})
+```
+
+使用此方法后，前面的配置的`REST_FRAMEWORK`里的版本名称，也得和这里的`url`参数传递的一样为`version`,这也支持配置全局的地方进行使用。
+
+
+
+### 请求头传递
+
+去`headers`请求头里获取版本信息
+
+```json
+{
+  "Accept": "application/json;version=v3"
+}
+```
+
+![image-20211003195826500](/vue-blog/assets/images/image-20211003195826500.png)
+
+```python
+# Create your views here.
+from rest_framework.versioning import QueryParameterVersioning, URLPathVersioning, AcceptHeaderVersioning
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class UserView(APIView):
+    # versioning_class = QueryParameterVersioning
+    # versioning_class = URLPathVersioning
+    versioning_class = AcceptHeaderVersioning
+
+    def get(self, request, *args, **kwargs):
+
+        print(request.version)
+        return Response({"code": 1000, "data": "xxx"})
+
+    def post(self, request, *args, **kwargs):
+        return Response({"code": 1000, "data": "xxx"})
+
+```
+
+
+
+::: details 查看源码
+
+```python
+class AcceptHeaderVersioning(BaseVersioning):
+    """
+    GET /something/ HTTP/1.1
+    Host: example.com
+    Accept: application/json; version=1.0
+    """
+    invalid_version_message = _('Invalid version in "Accept" header.')
+
+    def determine_version(self, request, *args, **kwargs):
+        media_type = _MediaType(request.accepted_media_type)
+        version = media_type.params.get(self.version_param, self.default_version)
+        version = unicode_http_header(version)
+        if not self.is_allowed_version(version):
+            raise exceptions.NotAcceptable(self.invalid_version_message)
+        return version
+
+    # We don't need to implement `reverse`, as the versioning is based
+    # on the `Accept` header, not on the request URL.
+```
+
+:::
+
+
+
+### 二级域名传递
+
+效果就是 `v1.xxx.com:8000/api/users`
+
+直接就在二级域名前加上版本 信息
+
+视图函数修改配置
+
+```python
+# Create your views here.
+from rest_framework.versioning import QueryParameterVersioning, URLPathVersioning, AcceptHeaderVersioning, \
+    HostNameVersioning
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class UserView(APIView):
+    # versioning_class = QueryParameterVersioning
+    # versioning_class = URLPathVersioning
+    # versioning_class = AcceptHeaderVersioning
+    versioning_class = HostNameVersioning
+
+    def get(self, request, *args, **kwargs):
+
+        print(request.version)
+        return Response({"code": 1000, "data": "xxx"})
+
+    def post(self, request, *args, **kwargs):
+        return Response({"code": 1000, "data": "xxx"})
+
+```
+
+:::tip
+
+自己如何想测试的话，`windows`的可以去修改hosts添加配置项
+
+```nginx
+127.0.0.1 v1.xxx.com
+127.0.0.1 v2.xxx.com
+```
+
+:::
+
+同样`mac`也是如此，但是`mac`需要获取到`root`权限才能去修改
+
+```bash
+su - 
+
+# 然后输入你的密码
+
+vim /etc/hosts # 应该是这个地址的。然后去添加上面的2个二级域名
+```
+
+然后根据视图函数里的配置的信息，去测试请求获取的版本信息
+
+
+
+### 路由的namespace传递
+
+`urls.py`需要做出修改
+
+```python
+
+from django.contrib import admin
+from django.urls import path, include
+from app01 import views
+
+urlpatterns = [
+    # path('admin/', admin.site.urls),
+
+    # path("api/<str:version>/users", views.users),
+    # path("api/<str:version>/users/<int:pk>", views.users),
+
+    # path('api/users/', views.UserView.as_view()),
+    path('api/v1', include('app01.urls', namespace='v1')),
+    path('api/v2', include('app01.urls', namespace='v2'))
+]
+```
+
+视图函数对应的修改配置
+
+```python
+# Create your views here.
+from rest_framework.versioning import QueryParameterVersioning, URLPathVersioning, AcceptHeaderVersioning, \
+    HostNameVersioning, NamespaceVersioning
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class UserView(APIView):
+    # versioning_class = QueryParameterVersioning
+    # versioning_class = URLPathVersioning
+    # versioning_class = AcceptHeaderVersioning
+    # versioning_class = HostNameVersioning
+    versioning_class = NamespaceVersioning
+
+    def get(self, request, *args, **kwargs):
+
+        print(request.version)
+        return Response({"code": 1000, "data": "xxx"})
+
+    def post(self, request, *args, **kwargs):
+        return Response({"code": 1000, "data": "xxx"})
+
+```
+
+
+
+### 反向生成URL
+
+在每个版本处理的类中还定义了`reverse`方法， 它是用来反向生成URL并携带相关的版本信息用的。
+
+```python
+from rest_framework.versioning import QueryParameterVersioning
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class UserView(APIView):
+    versioning_class = QueryParameterVersioning
+
+    def get(self, request, *args, **kwargs):
+
+        print(request.version)
+        # 反向生成URL
+        url1 = request.versioning_scheme.reverse("u1", request=request)
+        print(url1)
+        return Response({"code": 1000, "data": "xxx"})
+
+    def post(self, request, *args, **kwargs):
+        return Response({"code": 1000, "data": "xxx"})
+
+```
+
+::: details 某一个reverse源码
+
+```python
+    def reverse(self, viewname, args=None, kwargs=None, request=None, format=None, **extra):
+        url = super().reverse(
+            viewname, args, kwargs, request, format, **extra
+        )
+        if request.version is not None:
+            return replace_query_param(url, self.version_param, request.version)
+        return url
+```
+
+:::
+
+
+
+## 总结
+
+使用`drf`框架开发后端的`API`接口时：
+
+-   
