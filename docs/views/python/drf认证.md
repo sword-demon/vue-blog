@@ -50,6 +50,10 @@ class AuthView(APIView):
 
 
 
+<!-- more -->
+
+
+
 编辑认证类
 
 必须继承`BaseAuthentication`这个父类
@@ -238,3 +242,113 @@ class OrderView(APIView):
         return Response({"code": 0, "data": {"user": None, "list": [44, 55, 66]}})
 ```
 
+
+
+## 多个认证类
+
+一般情况下编写一个认证类足矣。
+
+多个时，可以写多个认证类
+
+-   在请求中传递token进行验证
+-   请求携带cookie进行验证
+-   请求携带jwt进行验证
+-   请求携带的加密的数据，需要特定的算法解密，一般为app开发的接口都有加解密算法
+-   etc.
+
+此时，就可以写多个认证类
+
+
+
+案例
+
+```python
+# auth.py
+
+# -*- coding: utf8 -*-
+# @Time    : 2021/10/3 23:20
+# @Author  : wxvirus
+# @File    : auth.py
+# @Software: PyCharm
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+
+from app01 import models
+
+
+class TokenAuthentication(BaseAuthentication):
+    """
+    认证组件
+    """
+
+    def authenticate(self, request):
+        """
+        认证的方法
+        :param request:
+        :return:
+        """
+        token = request.query_param.get("token")
+        if not token:
+            # 代表用户匿名访问
+            return None
+            # 抛出异常，终止认证，返回认证失败
+            # raise AuthenticationFailed({"code": 1002, "data": "认证失败"})
+
+        user_object = models.UserInfo.objects.filter(token=token).first()
+        if not user_object:
+            # 认证失败
+            raise AuthenticationFailed({"code": 1002, "data": "认证失败"})
+
+        # 返回元祖
+        # 第一个赋值给 request.user
+        # 第二个赋值给 request.auth
+        return user_object, token
+
+    def authenticate_header(self, request):
+        """
+        认证失败了，给用户返回的响应头信息
+        :param request:
+        :return:
+        """
+        return "Bearer realm='API'"
+
+
+class CookieAuthentication(BaseAuthentication):
+
+    def authenticate(self, request):
+        session_id = request.COOKIE.get('session_id')
+        if not session_id:
+            return None
+        user_object = models.UserInfo.objects.filter(token=session_id).first()
+        if not user_object:
+            return None
+        return user_object, session_id
+
+    def authenticate_header(self, request):
+        return 'Bearer realm="API"'
+
+```
+
+
+
+### 全局配置
+
+在每个视图类的类变量`authentication_classes`中可以定义，在配置文件中也可以进行全局配置
+
+```python
+REST_FRAMEWORK = {
+   "UNAUTHENTICATED_USER": lambda: None,
+   "UNAUTHENTICATED_TOKEN": lambda: None,
+   "DEFAULT_AUTHENTICATION_CLASSES": ["auth.TokenAuthentication", "auth.CookieAuthentication", ] # 认证类的路径
+}
+```
+
+>   下面的所有的类视图，就可以不用编写了
+
+如果在视图类中写上
+
+```python
+authentication_classes = []
+```
+
+就会使用当前配置的认证类 ，就会覆盖掉全局的配置的内容
