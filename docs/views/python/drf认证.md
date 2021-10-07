@@ -352,3 +352,120 @@ authentication_classes = []
 ```
 
 就会使用当前配置的认证类 ，就会覆盖掉全局的配置的内容
+
+
+
+::: datails APIView源码
+
+```python
+class APIView(View):
+
+    # The following policies may be set at either globally, or per-view.
+    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+    parser_classes = api_settings.DEFAULT_PARSER_CLASSES
+    # 如果你的视图类里写了自己一个类的配置，则会覆盖全局配置里的认证类
+    authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES
+    throttle_classes = api_settings.DEFAULT_THROTTLE_CLASSES
+    permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES
+    content_negotiation_class = api_settings.DEFAULT_CONTENT_NEGOTIATION_CLASS
+    metadata_class = api_settings.DEFAULT_METADATA_CLASS
+    versioning_class = api_settings.DEFAULT_VERSIONING_CLASS
+```
+
+:::
+
+
+
+## 权限
+
+>   读取认证中获取的用户信息，判断当前用户是否有权限访问。
+
+```python
+class UserInfo(models.Model):
+    role_choices = ((1, "普通用户"), (2, "管理员"), (3, "超级管理员"),)
+    role = models.IntegerField(verbose_name='角色', choices=role_choices, default=1)
+    username = models.CharField(max_length=32, verbose_name='用户名')
+    password = models.CharField(max_length=64, verbose_name='密码')
+    token = models.CharField(max_length=64, verbose_name='token认证', null=True, blank=True)
+```
+
+
+
+权限类
+
+```python
+from rest_framework.permissions import BasePermission
+class PermissionA(BasePermission):
+    message = {"code": 1003, 'data': '无权访问'}
+
+    def has_permission(self, request, view):
+      """
+      此方法必须有
+      """
+        pass
+
+    def has_object_permission(self, request, view, obj):
+        pass
+```
+
+视图类
+
+```python
+class OrderView(APIView):
+    # 通过类变量进行绑定，这就意味着，这个视图类有限需要进行认证，认证成功了才会走到 下面的方法
+    authentication_classes = [TokenAuthentication, CookieAuthentication]
+    permission_classes = [PermissionA, ] # 加上了这个
+
+    def get(self, request, *args, **kwargs):
+        print(request.user)
+        print(request.auth)
+
+        if not request.user:
+            # 匿名访问返回内容
+            return Response({"code": 0, "data": [11, 22, 33]})
+
+        return Response({"code": 0, "data": {"user": None, "list": [44, 55, 66]}})
+```
+
+
+
+验证权限简单实现
+
+```python
+def has_permission(self, request, view):
+  if request.user.role == 2:
+    return True
+  return False
+```
+
+
+
+**因为在配置的时候是列表，所以这个也是可以有多个权限类**
+
+关系：
+
+:::danger
+
+列表里的所有权限都通关了才能继续往下走，缺一不可！
+
+:::
+
+
+
+---
+
+这也可以进行全局配置
+
+```python
+# settings.py
+REST_FRAMEWORK = {
+    "VERSION_PARAM": "v",
+    "DEFAULT_VERSION": "v1",  # 设置默认版本为v1
+    "ALLOWED_VERSIONS": ["v1", "v2", "v3"],
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.QueryParameterVersioning",
+    "DEFAULT_AUTHENTICATION_CLASSES": ["app01.auth.TokenAuthentication", "app01.auth.CookieAuthentication", ],
+    "DEFAULT_PERMISSION_CLASSES": ["app01.permission.PermissionA"]
+}
+
+```
+
