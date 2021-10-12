@@ -102,3 +102,55 @@ class OrderView(APIView):
         return Response({"code": 0, "data": {"user": None, "list": [44, 55, 66]}})
 ```
 
+
+
+
+
+### 多个限流类
+
+```python
+# 在视图类里加上
+throttle_classes = [MyRateThrottle, ]
+```
+
+>   多个限流类的时候，他会内容有一个列表用来存储不允许访问的限流类，最后去判断有没有不允许的类，最后在页面进行显示错误信息。无论它返回False还是True，都会把所有的限流类执行完，但是如果抛出异常了，后续的限流类都不会继续执行了。
+
+`SimpleRateThrottle`类内部实现了一个`allow_request`的方法
+
+-   返回True - 允许访问
+-   返回False - 超过频率，不允许访问
+-   抛出异常，表示当前限流类不允许访问，后续限流类不再执行
+
+
+
+::: details SimpleRateThrottle 源码
+
+```python
+    def allow_request(self, request, view):
+        """
+        Implement the check to see if the request should be throttled.
+
+        On success calls `throttle_success`.
+        On failure calls `throttle_failure`.
+        """
+        if self.rate is None:
+            return True
+
+        self.key = self.get_cache_key(request, view)
+        if self.key is None:
+            return True
+
+        self.history = self.cache.get(self.key, [])
+        self.now = self.timer()
+
+        # Drop any requests from the history which have now passed the
+        # throttle duration
+        while self.history and self.history[-1] <= self.now - self.duration:
+            self.history.pop()
+        if len(self.history) >= self.num_requests:
+            return self.throttle_failure()
+        return self.throttle_success()
+```
+
+:::
+
