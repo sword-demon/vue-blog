@@ -262,11 +262,24 @@ loop.run_until_complete(asyncio.wait(tasks))
 伪代码：
 
 ```python
-# 伪代码任务列表 = [任务1， 任务2， 任务3...]while True:  	可执行任务列表，已完成的任务列表 = 去任务列表中检查所有的任务，将可执行和已完成的任务返回        for 就绪任务 in 已准备就绪的任务列表:      执行已就绪的任务        for 已完成的任务 in 已完成的任务列表:      在任务列表中移除已完成的任务          如果任务列表中的任务都已完成，则终止循环
+# 伪代码
+任务列表 = [任务1， 任务2， 任务3...]
+while True:  	
+    可执行任务列表，已完成的任务列表 = 去任务列表中检查所有的任务，将可执行和已完成的任务返回
+    for 就绪任务 in 已准备就绪的任务列表:
+        执行已就绪的任务
+        for 已完成的任务 in 已完成的任务列表:
+            在任务列表中移除已完成的任务
+            如果任务列表中的任务都已完成，则终止循环
 ```
 
 ```python
-import asyncio# 去生成或获取一个事件循环loop = asyncio.get_event_loop() # 可以理解为死循环在执行了# 将任务放到任务列表loop.run_until_complete(任务)
+import asyncio
+# 去生成或获取一个事件循环
+loop = asyncio.get_event_loop()
+# 可以理解为死循环在执行了
+# 将任务放到任务列表
+loop.run_until_complete(任务)
 ```
 
 
@@ -280,7 +293,10 @@ import asyncio# 去生成或获取一个事件循环loop = asyncio.get_event_loo
 asyncio 也支持旧式的 [基于生成器的](https://docs.python.org/zh-cn/3/library/asyncio-task.html#asyncio-generator-based-coro) 协程。
 
 ```python
-# 协程函数async def fuc():  	pass    result = func() # 协程对象
+# 协程函数async 
+def fuc():
+    pass
+result = func() # 协程对象
 ```
 
 **注意：执行协程函数创建的协程对象，函数内部代码是不会执行的。**
@@ -290,7 +306,14 @@ asyncio 也支持旧式的 [基于生成器的](https://docs.python.org/zh-cn/3/
 如果想要运行，就得借助事件循环，让事件循环去执行协程对象
 
 ```python
-import asyncioasync def func():    print("hello world")result = func()# loop = asyncio.get_event_loop()# loop.run_until_complete(result)asyncio.run(result)  # python3.7有的 更简单了
+import asyncioasync 
+def func():
+    print("hello world")
+    result = func()
+    # loop = asyncio.get_event_loop()
+    loop.run_until_complete(result)
+    asyncio.run(result)  
+    # python3.7有的 更简单了
 ```
 
 
@@ -308,19 +331,52 @@ await + 可等待的对象，只能跟下面3种
 示例1
 
 ```python
-import asyncioasync def func():  print("来玩啊")  response = await asyncio.sleep(2) # 模拟等待IO  print("结束", response)  asyncio.run(func())
+import asyncioasync 
+
+def func(): 
+    print("来玩啊")
+    response = await asyncio.sleep(2) 
+    # 模拟等待IO  
+    print("结束", response)
+    asyncio.run(func())
 ```
 
 示例2
 
 ```python
-import asyncioasync def others():    print("start")    await asyncio.sleep(2)    print("end")    return '返回值'async def func():    print("执行协程函数内部代码")    # 遇到IO操作挂起当前协程（任务），等待IO操作完成之后再继续往下执行，当前协程挂起时，事件循环可以去执行其他协程（任务）。    response = await others()    print("IO请求结束，结果为", response)asyncio.run(func())
+import asyncioasync 
+def others():   
+    print("start")  
+    await asyncio.sleep(2)
+    print("end")   
+    return '返回值'
+
+async def func():
+    print("执行协程函数内部代码")   
+    # 遇到IO操作挂起当前协程（任务），等待IO操作完成之后再继续往下执行，当前协程挂起时，事件循环可以去执行其他协程（任务）。    
+    response = await others() 
+    print("IO请求结束，结果为", response)
+    asyncio.run(func())
 ```
 
 示例3
 
 ```python
-import asyncioasync def others():    print("start")    await asyncio.sleep(2)    print("end")    return '返回值'async def func():    print("执行协程函数内部代码")    # 遇到IO操作挂起当前协程（任务），等待IO操作完成之后再继续往下执行，当前协程挂起时，事件循环可以去执行其他协程（任务）。    response1 = await others()        print("IO请求结束，结果为", response1)        response2 = await others()    print("IO请求结束，结果为", response2)asyncio.run(func())
+import asyncioasync 
+def others():    
+    print("start")    
+    await asyncio.sleep(2)
+    print("end")  
+    return '返回值'
+
+async def func():  
+    print("执行协程函数内部代码") 
+    # 遇到IO操作挂起当前协程（任务），等待IO操作完成之后再继续往下执行，当前协程挂起时，事件循环可以去执行其他协程（任务）。  
+    response1 = await others()   
+    print("IO请求结束，结果为", response1)   
+    response2 = await others()   
+    print("IO请求结束，结果为", response2)
+    asyncio.run(func())
 ```
 
 >   遇到await，就是等待对象的值得到结果之后再继续向下走
@@ -338,19 +394,67 @@ import asyncioasync def others():    print("start")    await asyncio.sleep(2)   
 文档示例：
 
 ```python
-import asyncioasync def nested():    return 42async def main():    # Schedule nested() to run soon concurrently    # with "main()".    task = asyncio.create_task(nested())    # "task" can now be used to cancel "nested()", or    # can simply be awaited to wait until it is complete:    await taskasyncio.run(main())
+import asyncioasync 
+def nested():   
+    return 42
+
+async def main():  
+    # Schedule nested() to run soon concurrently    
+    # with "main()".    
+    task = asyncio.create_task(nested())    
+    # "task" can now be used to cancel "nested()", or    
+    # can simply be awaited to wait until it is complete:    
+    await taskasyncio.run(main())
 ```
 
 示例1：
 
 ```python
-import asyncioasync def func():    print(1)    await asyncio.sleep(2)    print(2)    return '返回值'async def main():    print("main开始")    # 创建task对象，并将当前执行func函数任务添加到事件循环    task1 = asyncio.create_task(func())    task2 = asyncio.create_task(func())    print("main结束")    # 当执行某协程时遇到IO操作，会自动切换其他任务    # 此处的await是等待相对应的协程全部执行完毕并获取返回结果    ret1 = await task1    ret2 = await task2    print(ret1, ret2)asyncio.run(main())
+import asyncioasync 
+
+def func():
+    print(1)    
+    await asyncio.sleep(2)
+    print(2) 
+    return '返回值'
+
+async def main(): 
+    print("main开始")
+    # 创建task对象，并将当前执行func函数任务添加到事件循环    
+    task1 = asyncio.create_task(func())
+    task2 = asyncio.create_task(func())    		
+    print("main结束")
+    # 当执行某协程时遇到IO操作，会自动切换其他任务
+    # 此处的await是等待相对应的协程全部执行完毕并获取返回结果    
+    ret1 = await task1
+    ret2 = await task2
+    print(ret1, ret2)
+    asyncio.run(main())
 ```
 
 示例2
 
 ```python
-import asyncioasync def func():    print(1)    await asyncio.sleep(2)    print(2)    return '返回值'async def main():    print("main开始")    task_list = [        asyncio.create_task(func(), name="n1"),  # 起名        asyncio.create_task(func(), name="n2")    ]    print("main结束")    # 当执行某协程时遇到IO操作，会自动切换其他任务    # 此处的await是等待相对应的协程全部执行完毕并获取返回结果    # ret1 = await task1    # ret2 = await task2    done, pending = await asyncio.wait(task_list, timeout=2)  # 最多等2秒    print(done, pending)asyncio.run(main())
+import asyncioasync 
+def func():    
+    print(1)    
+    await asyncio.sleep(2)
+    print(2)    
+    return '返回值'
+
+async def main():  
+    print("main开始")   
+    task_list = [        asyncio.create_task(func(), name="n1"), 
+                 # 起名        
+                 asyncio.create_task(func(), name="n2")    ]  
+    print("main结束")    
+    # 当执行某协程时遇到IO操作，会自动切换其他任务 
+    # 此处的await是等待相对应的协程全部执行完毕并获取返回结果
+    # ret1 = await task1  
+    # ret2 = await task2  
+    done, pending = await asyncio.wait(task_list, timeout=2)  
+    # 最多等2秒    
+    print(done, pending)asyncio.run(main())
 ```
 
 
@@ -358,7 +462,16 @@ import asyncioasync def func():    print(1)    await asyncio.sleep(2)    print(2
 示例3
 
 ```python
-import asyncioasync def func():    print(1)    await asyncio.sleep(2)    print(2)    return '返回值'  # 写在外边注意，只能将协程函数放进列表里  task_list = [    func()    func()]done, pending = asyncio.run(asyncio.wait(task_list))print(done)
+import asyncioasync 
+def func():    
+    print(1)    
+    await asyncio.sleep(2)
+    print(2)    
+    return '返回值'  
+
+# 写在外边注意，只能将协程函数放进列表里  
+task_list = [func()func()]done, pending = asyncio.run(asyncio.wait(task_list))
+print(done)
 ```
 
 
@@ -378,7 +491,10 @@ import asyncioasync def func():    print(1)    await asyncio.sleep(2)    print(2
 Future 对象有时会由库和某些 asyncio API 暴露给用户，用作可等待对象:
 
 ```python
-async def main():    await function_that_returns_a_future_object()    # this is also valid:    await asyncio.gather(        function_that_returns_a_future_object(),        some_python_coroutine()    )
+async def main():    
+    await function_that_returns_a_future_object()
+    # this is also valid:    
+    await asyncio.gather(        function_that_returns_a_future_object(),        some_python_coroutine()    )
 ```
 
 一个很好的返回对象的低层级函数的示例是 [`loop.run_in_executor()`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor)。
@@ -388,7 +504,14 @@ async def main():    await function_that_returns_a_future_object()    # this is 
 示例1
 
 ```python
-async def main():  # 获取当前事件循环  loop = asyncio.get_running_loop()    # 创建一个任务 Future对象 , 这个任务什么都不干  fut = loop.create_future()    # 等待任务最终结果, 没有结果会一直等待下去  await fut    asyncio.run(main())
+async def main():  
+    # 获取当前事件循环  
+    loop = asyncio.get_running_loop()
+    # 创建一个任务 Future对象 , 这个任务什么都不干  
+    fut = loop.create_future()    
+    # 等待任务最终结果, 没有结果会一直等待下去  
+    await fut    
+    asyncio.run(main())
 ```
 
 
@@ -398,7 +521,21 @@ async def main():  # 获取当前事件循环  loop = asyncio.get_running_loop()
 实现线程池、进程池实现异步操作时用到的对象
 
 ```python
-import timefrom concurrent.futures import Futurefrom concurrent.futures.thread import ThreadPoolExecutorfrom concurrent.futures.process import ProcessPoolExecutordef func(val):    time.sleep(1)    print(val)# 创建线程池pool = ThreadPoolExecutor(max_workers=5)# 或者# 创建进程池# pool = ProcessPoolExecutor(max_workers=5)for i in range(10):    fut = pool.submit(func, i)    print(fut)
+import timefrom concurrent.futures 
+import Futurefrom concurrent.futures.thread 
+import ThreadPoolExecutorfrom concurrent.futures.process 
+import ProcessPoolExecutor
+
+def func(val):    
+    time.sleep(1)    
+    print(val)
+    # 创建线程池
+    pool = ThreadPoolExecutor(max_workers=5)
+    # 或者# 创建进程池
+    # pool = ProcessPoolExecutor(max_workers=5)
+    for i in range(10):    
+        fut = pool.submit(func, i)    
+        print(fut)
 ```
 
 以后写代码可能会存在交叉使用，一部分用协程，一部分用线程池。
@@ -410,7 +547,20 @@ import timefrom concurrent.futures import Futurefrom concurrent.futures.thread i
 交叉使用示例：
 
 ```python
-import timeimport asyncioimport concurrent.futuresdef func1():    # 某个耗时操作    time.sleep(2)    return "SB"async def main():    loop = asyncio.get_running_loop()    # 将不支持协程的进行转换    fut = loop.run_in_executor(None, func1)    result = await fut    print("default thread pool", result)asyncio.run(main())
+import timeimport asyncioimport concurrent.futures
+
+def func1():    
+    # 某个耗时操作    
+    time.sleep(2)    
+    return "SB"
+
+async def main():    
+    loop = asyncio.get_running_loop()    
+    # 将不支持协程的进行转换    
+    fut = loop.run_in_executor(None, func1)
+    result = await fut    
+    print("default thread pool", result)
+    asyncio.run(main())
 ```
 
 
@@ -418,7 +568,23 @@ import timeimport asyncioimport concurrent.futuresdef func1():    # 某个耗时
 案例：asyncio + 不支持异步的一个模块
 
 ```python
-import asyncioimport requestsasync def download_image(url):    # 发生网络请求，下载图片，(遇到网络下载的IO请求，自动切换到其他任务)    print("开始下载：", url)    loop = asyncio.get_event_loop()    # requests模块不支持异步操作，所以就使用线程池来配合实现    future = loop.run_in_executor(None, requests.get, url)    response = await future    print("下载完成")    # 图片保存到本地    file_name = url.rsplit('_')[-1]    with open(file_name, mode="wb") as file_object:        file_object.write(response.content)if __name__ == '__main__':    url_list = [        '图片.jpg'    ]    tasks = [download_image(url) for url in url_list]    loop = asyncio.get_event_loop()    loop.run_until_complete(asyncio.wait(tasks))
+import asyncioimport requestsasync 
+
+def download_image(url):    
+    # 发生网络请求，下载图片，(遇到网络下载的IO请求，自动切换到其他任务)    
+    print("开始下载：", url)    
+    loop = asyncio.get_event_loop()   
+    # requests模块不支持异步操作，所以就使用线程池来配合实现   
+    future = loop.run_in_executor(None, requests.get, url)    
+    response = await future    
+    print("下载完成")    
+    # 图片保存到本地    
+    file_name = url.rsplit('_')[-1]    
+    with open(file_name, mode="wb") as file_object:  
+        file_object.write(response.content)if __name__ == '__main__':    
+            url_list = [        '图片.jpg'    ]    
+            tasks = [download_image(url) for url in url_list]    
+            loop = asyncio.get_event_loop()    loop.run_until_complete(asyncio.wait(tasks))
 ```
 
 
@@ -432,7 +598,28 @@ import asyncioimport requestsasync def download_image(url):    # 发生网络请
 可在`async for`语句中被使用的对象。必须通过它的`__aiter__()`方法返回一个`asynchronous_iterator`。
 
 ```python
-import asyncioclass Reader(object):    """    自定义异步迭代器，同时也是异步可迭代对象    """    def __init__(self):        self.count = 0    async def readline(self):        # await asyncio.sleep(2)        self.count += 1        if self.count == 100:            return None        return self.count    def __aiter__(self):        return self    async def __anext__(self):        val = await self.readline()        if val == None:            raise StopAsyncIteration        return valasync def func():    obj = Reader()    # 必须写在协程函数内    async for item in obj:        print(item)asyncio.run(func())
+import asyncioclass Reader(object):    
+    """    自定义异步迭代器，同时也是异步可迭代对象    """    
+    def __init__(self):        
+        self.count = 0    
+        async def readline(self):
+            # await asyncio.sleep(2) 
+            self.count += 1      
+            if self.count == 100:    
+                return None    
+            return self.count 
+        def __aiter__(self):   
+            return self  
+        
+        async def __anext__(self): 
+            val = await self.readline()  
+            if val == None:       
+                raise StopAsyncIteration 
+                return valasync def func(): 
+                obj = Reader()   
+                # 必须写在协程函数内   
+                async for item in obj:    
+                    print(item)asyncio.run(func())
 ```
 
 
@@ -442,7 +629,28 @@ import asyncioclass Reader(object):    """    自定义异步迭代器，同时�
 此种对象通过定义`__aenter__()`和`__aexit__()`方法来对`async with`语句中的环境进行控制。
 
 ```python
-import asyncioclass AsyncContextManager:    def __init__(self):        # self.conn = conn        pass    async def do_something(self):        # 异步操作数据库        return 666    async def __aenter__(self):        # 异步连接数据库        # self.conn = await asyncio.sleep(1)        return self    async def __aexit__(self, exc_type, exc_val, exc_tb):        # 异步关闭数据库        await asyncio.sleep(1)async def func():    obj = AsyncContextManager()    async with obj:        result = await obj.do_something()        print(result)asyncio.run(func())
+import asyncioclass AsyncContextManager:    
+    def __init__(self):   
+        # self.conn = conn  
+        pass    
+    
+    async def do_something(self):    
+        # 异步操作数据库    
+        return 666    
+    
+    async def __aenter__(self):  
+        # 异步连接数据库   
+        # self.conn = await asyncio.sleep(1) 
+        return self    
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):  
+        # 异步关闭数据库        
+        await asyncio.sleep(1)async def func():
+            obj = AsyncContextManager() 
+            async with obj:        
+                result = await obj.do_something()        
+                print(result)
+                asyncio.run(func())
 ```
 
 ## uvloop
@@ -458,7 +666,12 @@ pip3 install uvloop
 
 
 ```python
-import asyncioimport uvloop# 主要是这一句asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())# 编写asyncio的代码# 内部的事件循环自动化会变成uvloopasyncio.run(...)
+import asyncioimport uvloop
+# 主要是这一句
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+# 编写asyncio的代码
+# 内部的事件循环自动化会变成
+uvloopasyncio.run(...)
 ```
 
 

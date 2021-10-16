@@ -154,3 +154,20 @@ throttle_classes = [MyRateThrottle, ]
 
 :::
 
+
+
+### 全局配置
+
+按照之前的套路，这个也是可以进行全局配置的
+
+```python
+REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_CLASSES": ["app01.xxx.限流类"],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "10/m" # user代表限流类里的 scope 的标识
+    }
+}
+```
+
+如果不想使用限流类，就在你的对应的视图类里加上一个限流类的空列表。
+
