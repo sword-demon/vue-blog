@@ -5,7 +5,6 @@
     "deploy": "bash deploy.sh"
   },
   "dependencies": {
-    "vue-router": "3.4.9",
     "@vuepress-reco/vuepress-plugin-rss": "^1.0.2",
     "@vuepress/plugin-google-analytics": "^1.7.1",
     "@vuepress/plugin-pwa": "^1.7.1",
@@ -13,8 +12,11 @@
     "axios": "^0.21.0",
     "chokidar": "^3.4.3",
     "jquery": "^3.5.1",
+    "markdown-it": "^12.2.0",
+    "markdown-it-sup": "^1.0.0",
     "mkdirp": "^1.0.4",
     "moment": "^2.29.1",
+    "vue-router": "3.4.9",
     "vuepress": "^1.7.1",
     "vuepress-plugin-boxx": "0.0.7",
     "vuepress-plugin-container": "^2.1.5",

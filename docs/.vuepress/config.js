@@ -78,7 +78,11 @@ module.exports = {
         ]
     },
     markdown: {
-        lineNumbers: true
+        lineNumbers: true,
+        extendMarkdown: md => {
+            // 使用 markdown-it的插件
+            md.use(require('markdown-it-sup'))
+        }
     },
     plugins: pluginsConf
 }
