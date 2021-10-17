@@ -75,6 +75,12 @@ module.exports = {
                 logo: "https://vuepress-theme-reco.recoluan.com/icon_vuepress_reco.png",
                 link: 'https://vuepress-theme-reco.recoluan.com'
             },
+            {
+                title: '枫枫知道',
+                desc: '后端设计师、程序员',
+                logo: 'https://blog.fengfengzhidao.icu/static/ico/image.ico',
+                link: 'https://blog.fengfengzhidao.icu/'
+            }
         ]
     },
     markdown: {
