@@ -1,5 +1,5 @@
 ---
-title: 'drf认证组件'
+02title: 'drf认证组件'
 date: '2021-10-03 22:10:00'
 sidebar: 'auto'
 permalink: '/python/drf/authz'

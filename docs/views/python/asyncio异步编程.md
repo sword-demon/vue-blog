@@ -677,3 +677,4 @@ uvloopasyncio.run(...)
 
 
 **注意：**Django3和FastAPI一个`asgi` -> `uvicorn`本质上快都是用了uvloop。
+
