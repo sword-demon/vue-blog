@@ -43,6 +43,12 @@ a[1] = 2;
 
 
 
+### java数组内存分析
+
+![java数组内存分析](https://gitee.com/wxvirus/img/raw/master/img/java数组内存分析.png)
+
+
+
 ## 数组的四个基本特点
 
 -   长度是确定的，数组一旦创建，它的大小就是不可以改变的

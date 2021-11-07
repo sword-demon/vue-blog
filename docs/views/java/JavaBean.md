@@ -46,6 +46,7 @@ public class Person1 {
     private int age;
 
     // 无参构造
+    // 默认就有，不写也可
     public Person1() {
     }
 
