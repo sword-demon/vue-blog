@@ -208,3 +208,210 @@ public static char getChar(byte[] val, int index) {
 
 ![debug分析](https://gitee.com/wxvirus/img/raw/master/img/20211111233342.png)
 
+
+
+### 其他常用方法
+
+```java
+// 字符串的截取
+String s8 = "asdsadadas";
+System.out.println(s8.substring(3));
+System.out.println(s8.substring(3, 6)); // [3, 6) 左闭右开
+
+// 字符串拼接/合并
+System.out.println(s8.concat("php"));
+
+// 将所有 'a' 替换为 'u' 返回一个新的字符串
+System.out.println(s1.replace('a', 'u'));
+
+// 按照指定的字符串进行字符串分隔
+String s9 = "a-b-c-d-e";
+String[] strs = s9.split("-");
+System.out.println(Arrays.toString(strs));
+
+// 转大写
+System.out.println(s9.toUpperCase());
+// 转小写
+System.out.println(s9.toLowerCase());
+
+String s10 = "   a   ab dadas   ";
+// 去除首尾空格
+System.out.println(s10.trim());
+
+// 转换为String类型
+System.out.println(String.valueOf(false));
+```
+
+
+
+## String内存分析
+
+### 1. 字符串拼接
+
+```java
+package com.str;
+
+public class Test02 {
+    public static void main(String[] args) {
+        String s1 = "a" + "b" + "c";
+        String s2 = "ab" + "c";
+        String s3 = "a" + "bc";
+        String s4 = "abc";
+        String s5 = "abc" + "";
+    }
+}
+
+```
+
+**上面的字符串，会进行编译期优化，直接合并为完整的字符串，我们可以查看字节码进行验证：**
+
+```java
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by FernFlower decompiler)
+//
+
+package com.str;
+
+public class Test02 {
+    public Test02() {
+    }
+
+    public static void main(String[] args) {
+        String s1 = "abc";
+        String s2 = "abc";
+        String s3 = "abc";
+        String s4 = "abc";
+        String s5 = "abc";
+    }
+}
+
+```
+
+**然后再常量池中，常量池的特点是第一次如果没有这个字符串，就放进去，如果有这个字符串吗，后面就都直接从常量池里取**
+
+![上述内存分析](https://gitee.com/wxvirus/img/raw/master/img/20211112213111.png)
+
+
+
+### 2. new关键字创建对象
+
+```java
+String s6 = new String("abc");
+```
+
+**内存分析：开辟两个空间(1. 字符串常量池中的字符串  2.堆中创建的对象)**
+
+![上述内存分析](https://gitee.com/wxvirus/img/raw/master/img/20211112215604.png)
+
+
+
+### 3. 有变量参与的字符串拼接
+
+```java
+package com.str;
+
+public class Test03 {
+    public static void main(String[] args) {
+        String a = "abc";
+        String b = a + "def";
+        System.out.println(b);
+    }
+}
+
+```
+
+**a变量在编译的时候，不知道a是字符串"abc"，所以不会进行编译期优化，不会直接合并为"abcdef"**
+
+**反汇编过程：为了更好的分析字节码文件是如何进行解析的。**
+
+-   利用控制台打开字节码文件所在的地址在终端显示
+-   输入：`javap -c Test03.class`
+
+
+
+```bash
+Compiled from "Test03.java"
+public class com.str.Test03 {
+  public com.str.Test03();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: return
+
+  public static void main(java.lang.String[]);
+    Code:
+       0: ldc           #7                  // String abc
+       2: astore_1
+       3: aload_1
+       4: invokedynamic #9,  0              // InvokeDynamic #0:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+       9: astore_2
+      10: getstatic     #13                 // Field java/lang/System.out:Ljava/io/PrintStream;
+      13: aload_2
+      14: invokevirtual #19                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+      17: return
+}
+
+```
+
+>   虽然我现在看不懂哈。。。
+
+-   invokedynamic：关键特征：检查的主题的过程是在运行期而不是编译期
+
+
+
+下面的内容翻译的是人家的，简单分析一下：
+
+-   ldc 将常量池中的String入栈
+-   astore_1 将栈顶ref对象保存至局部变量1
+-   aload_1 将局部变量1入栈
+-   invokedynamic动态调用
+-   astore 保存最终的值到一个位置
+-   。。。
+-   return 返回
+
+---
+
+JDK1.8反编译的内容
+
+```bash
+Compiled from "Test03.java"
+public class com.str.Test03 {
+  public com.str.Test03();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: return
+
+  public static void main(java.lang.String[]);
+    Code:
+       0: ldc           #2                  // String abc
+       2: astore_1
+       3: new           #3                  // class java/lang/StringBuilder
+       6: dup
+       7: invokespecial #4                  // Method java/lang/StringBuilder."<init>":()V
+      10: aload_1
+      11: invokevirtual #5                  // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      14: ldc           #6                  // String def
+      16: invokevirtual #5                  // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      19: invokevirtual #7                  // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+      22: astore_2
+      23: getstatic     #8                  // Field java/lang/System.out:Ljava/io/PrintStream;
+      26: aload_2
+      27: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+      30: return
+}
+
+```
+
+**jdk8对字符串拼接的操作，虚拟机使用的是`StringBuilder`进行的优化**
+
+
+
+## 字符串的分类
+
+1.   不可变字符串：`String`
+2.   可变字符串：`StringBuilder`、`StringBuffer`
+
+
+
