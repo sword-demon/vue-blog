@@ -65,3 +65,32 @@ public class Test04 {
 
 
 
+## 可变和不可变
+
+**String不可变**
+
+```java
+String a = "abc";
+```
+
+不可变：在地址不变的情况下，想把"abc"变成"abcdef"是不可能的。这两个完全就是2个字符串了，而且分别对应的地址也是不一样的。
+
+
+
+**StringBuilder可变**
+
+可变：在`StringBuilder`这个对象的地址不变的情况下，想把"abc"变成"abcdef"，是可能的，直接追加即可。
+
+
+
+## String和StringBuffer和StringBuilder的区别与联系
+
+1.   String类是不可变类，即一旦一个String对象被创建后，包含在这个对象中的字符序列是不可改变的，直至这个对象销毁。
+
+2.   StringBuffer类则代表一个字符序列可变的字符串，可以通过`append,insert,reverse,setCharAt,setLength`等方法改变其内容。一旦生成了最终的字符串，调用`toString`方法将其转变为`String`
+
+3.   JDK1.5新增了一个`StringBuilder`类，与`StringBuffer`类想相似，构造方法和方法基本相同，不同的是`StringBuffer`是线程安全的，而`StringBuilder`是线程不安全的，所以性能略高。通常情况下，创建一个可变的字符串，优先考虑`StringBuilder`
+
+     StringBuilder：JDK1.5开始  效率高  线程不安全
+
+     StringBuffer：JDK1.0开始  效率低  线程安全
