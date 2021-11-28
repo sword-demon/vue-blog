@@ -53,3 +53,90 @@ tags:
 
 
 ## 本地仓库
+
+>   本地仓库指的是本机的一份拷贝，用来缓存远程下载，包含你尚未发布的临时构件。
+
+:::tip
+
+建议windwos用户本地仓库别放在C盘
+
+:::
+
+## 配置仓库
+
+### 本地仓库配置：
+
+打开`settings.xml`
+
+```xml
+<localRepository>对应你本地的repository的地址填入</localRepository>
+```
+
+:::tip
+
+正常的来说，这个是注释掉的，最好重新复制一份，进行设置
+
+:::
+
+
+
+### 镜像仓库配置
+
+>   如果仓库A可以提供仓库B存储的所有内容，那么就可以认为A是B的一个镜像，Maven的中央仓库是Apache的在国外，国内下载速度非常慢，这时，我们可以使用阿里云提供的镜像`http://maven.aliyun.com/nexus/content/groups/public/`来替换中央仓库`http://repol.maven.org/maven2/`，修改`maven`的`settings.xml`文件。
+
+```xml
+<mirror>
+	<!-- 指定镜像id 可以自己改名 -->
+    <id>nexus-aliyun</id>
+    <!-- 匹配中央仓库 阿里云的仓库名称，不可以自己起名，必须这么写 -->
+    <mirrorOf>central</mirrorOf>
+    <!-- 指定镜像名称 可以自己改名 -->
+    <name>Nexus aliyun</name>
+    <!-- 指定镜像路径 镜像地址 -->
+    <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+</mirror>
+```
+
+**找到`<mirrors></mirrors>`标签里面进行粘贴即可**
+
+
+
+## 仓库优先级
+
+1.   最先从本地仓库中找
+2.   如果本地没有，去配置文件中指定的仓库中查找
+3.   也没有，就去中央仓库找
+4.   最后到中央仓库
+
+
+
+## JDK的配置
+
+>   当你的IDEA中有多个JDK的时候，就需要指定你编译和运行的JDK
+
+在`settings.xml`中配置：
+
+```xml
+<profile>
+	<!-- 告诉maven我们使用jdk1.8  -->
+    <id>jdk-1.8</id>
+    <!-- 开启JDK的使用 -->
+    <activation>
+    	<activeByDefault>true</activeByDefault>
+        <jdk>1.8</jdk>
+    </activation>
+    <properties>
+    	<!-- 配置编译期信息 -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        		<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+    </properties>
+</profile>
+```
+
+:::warning
+
+settings.xml中的id不能随便起；且配置的前提是你有JDK1.8。
+
+:::
+
