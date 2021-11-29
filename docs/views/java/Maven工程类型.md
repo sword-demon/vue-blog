@@ -267,7 +267,7 @@ B工程可以是自己的项目打包后的jar包，也可以是中央仓库的j
 
 -   import
 
-    >   import范围只适用于`pom.xml`文件中的`<dependencyManagement>`部分。表明指定的POM必须**使用<dependencyManagement>部分的依赖**。
+    >   import范围只适用于`pom.xml`文件中的`<dependencyManagement>`部分。表明指定的POM必须**使用`<dependencyManagement>`部分的依赖**。
 
     :::warning
 
@@ -316,4 +316,187 @@ B工程可以是自己的项目打包后的jar包，也可以是中央仓库的j
     </dependencies>
     ```
 
+
+
+
+### 聚合关系
+
+>   当我们开发的工程有2个以上的模块的时候，每个模块都是独立的功能集合。开发的时候每个平台都可以独立编译、测试和运行，这个时候我们就需要聚合工程。
+>
+>   在创建聚合工程的时候，总的工程必须是一个`POM`工程(Maven Project)，聚合项目必定是一个`POM`类型的项目，`jar`项目`war`项目是没有办法做聚合工程的，各子模块可以是任意类型模块(Maven Module)。
+
+:::tip
+
+**前提：继承**
+
+聚合包含了继承的特性
+
+聚合多个项目的本质还是一个项目，这些项目被一个大的父项目包含，且这个父项目是`POM`类型，同时在父项目的`pom.xml`中出现`<modules>`表示包含的所有子模块。
+
+:::
+
+
+
+案例父工程
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.imooc.ecommerce</groupId>
+    <artifactId>ecommerce-springcloud</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <!-- 对应的各个子模块 groupId一样 -->
+    <modules>
+        <module>e-commerce-common</module>
+        <module>e-commerce-mvc-config</module>
+        <module>e-commerce-alibaba-nacos-client</module>
+    </modules>
+
+    <!-- 默认是jar 多模块是为了别的子模块提供依赖的，所以这里只能是pom 不能是jar -->
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.3.1.RELEASE</version>
+    </parent>
+
+    <properties>
+        <!-- Spring Cloud Hoxton.SR8 依赖 -->
+        <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
+        <!-- spring cloud alibaba 依赖 下面依赖上面 -->
+        <spring-cloud-alibaba.version>2.2.4.RELEASE</spring-cloud-alibaba.version>
+    </properties>
+
+    <dependencies>
+        <!-- lombok 工具通过在代码编译时期动态的将注解替换为具体的代码,
+        IDEA 需要添加 lombok 插件 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.18</version>
+        </dependency>
+
+        <!-- 测试用例依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.jupiter</groupId>
+                    <artifactId>junit-jupiter-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- 健康检查 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- 工具类依赖 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.11</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.4</version>
+        </dependency>
+
+        <!-- 国产的一个工具类的集合 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.6.0</version>
+        </dependency>
+        <!-- 引入jwt-->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.10.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.10.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.10.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- json序列化的工具 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.47</version>
+        </dependency>
+    </dependencies>
+
+    <!-- 项目依赖管理 父项目只是声明依赖，子项目需要写明需要的依赖(可以省略版本信息) -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- spring cloud 依赖 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- spring cloud alibaba 依赖 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
+```
+
+某一个子模块案例
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     
+    <!-- 标明父项目 -->
+    <parent>
+        <artifactId>ecommerce-springcloud</artifactId>
+        <groupId>com.imooc.ecommerce</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+	<!-- 当前模块信息描述 -->
+    <artifactId>e-commerce-common</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <!-- 模块名及描述信息 -->
+    <name>e-commerce-common</name>
+    <description>通用模块</description>
+</project>
+```
+
+
+
