@@ -817,7 +817,7 @@ public class JDBCDemo_UserLogin {
     public static void testInjectSQL() throws Exception {
         String url = "jdbc:mysql://127.0.0.1:3306/db1";
         String username = "root";
-        String password = "9264946";
+        String password = "";
 
         // 1. 注册驱动
         Class.forName("com.mysql.jdbc.Driver");
@@ -862,3 +862,4 @@ select * from user where username = '张三' and password = '' or '1' = '1'
 `and`会先执行，前面2个为true，后面在和`or`进行判断，后面是恒等的，就等于查询全部。
 
 :::
+
