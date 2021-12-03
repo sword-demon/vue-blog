@@ -863,3 +863,276 @@ select * from user where username = '张三' and password = '' or '1' = '1'
 
 :::
 
+---
+
+**解决SQL注入**
+
+1.   获取`PreparedStatement`对象
+
+     ```java
+     // sql语句中的参数值，使用 ? 占位符替代
+     String sql = "select * from user where username = ? and password = ?";
+     
+     // 通过Connection的对象获取，并传入对应的sql语句
+     PreparedStatement pstmt = conn.prepareStatement(sql);
+     ```
+
+2.   设置参数值
+
+     ```java
+     PreparedStatement对象：setXxx(参数1, 参数2) // 给 ? 赋值
+     ```
+
+     Xxx：数据类型；如：`setInt(参数1, 参数2)`
+
+     参数：
+
+     -   参数1：`?`的位置编号，**从1开始**
+     -   参数2：`?`的值
+
+3.   执行SQL(不需要再传递sql)
+
+     ```sql
+     executeUpdate();
+     // 或者
+     executeQuery();
+     ```
+
+     
+
+```java
+package com.wx.jdbc;
+
+import java.sql.*;
+
+public class JDBCDemo_PreparedStatement {
+
+    public static void main(String[] args) throws Exception {
+
+        String url = "jdbc:mysql://127.0.0.1:3306/db1";
+        String username = "root";
+        String password = "";
+
+        // 1. 注册驱动
+        Class.forName("com.mysql.jdbc.Driver");
+
+        // 2. 获取连接
+        Connection conn = DriverManager.getConnection(url, username, password);
+
+        String name = "张三";
+        String pwd = "' or '1' = '";
+
+        // 3. 定义sql
+        String sql = "select * from user where username = ? and password = ?";
+
+        // 获取 pstmt对象
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setString(1, name);
+        pstmt.setString(2, pwd);
+
+        // 执行sql
+        ResultSet rs = pstmt.executeQuery();
+
+        if (rs.next()) {
+            System.out.println("登录成功");
+        } else {
+            System.out.println("登录失败");
+        }
+
+        // 7. 释放资源
+        rs.close();
+        pstmt.close();
+        conn.close();
+    }
+}
+
+```
+
+在进行`setXxx`的时候，会对传递进去的参数进行转义，例如上述的注入的操作被转义成以下内容：
+
+```sql
+select * from user where username = '张三' and password = '\' or \'1\' = \'1';
+
+# 此时里面的这个东西就会变成文本，然后就查询不到内容
+```
+
+
+
+### PreparedStatement原理
+
+好处：
+
+1.   预编译SQL，性能更高
+2.   防止SQL注入：**将敏感字符进行转义**
+
+---
+
+**开启预编译功能**
+
+>   其实它的预编译功能默认是关闭的
+
+```java
+// 加到连接的url后面
+useServerPrepStmts=true
+```
+
+```java
+String url = "jdbc:mysql://127.0.0.1:3306/db1?useServerPrepStmts=true";
+```
+
+**配置MySQL执行日志(重启MySQL服务生效)**
+
+```ini
+log-output=FILE
+general-log=1
+general_log_file="存储的位置"
+slow-query-log=1
+slow_query_log_file="慢查询日志的位置"
+long_query_time=2
+```
+
+---
+
+**原理：**
+
+1.   在获取`PreparedStatement`对象时，将sql语句发送给`mysql`服务器进行检查，编译(这些步骤很耗时)。
+2.   执行时就不用再进行这些步骤了，速度更快
+3.   如果`sql`模板一样，则只需要进行一次检查、编译。
+
+
+
+<p align="center"><img src="https://gitee.com/wxvirus/img/raw/master/img/20211202205031.png" alt="实现原理" /></p>
+
+```java
+PreparedStatement pstmt = conn.prepareStatement(sql);
+// 这一步就已经将SQL语句发送给MySQL进行预编译。
+```
+
+
+
+## 数据库连接池
+
+
+
+### 简介
+
+>   数据库连接池是个容器，负责分配、管理数据库连接(Connection)
+>
+>   它允许应用程序重复使用一个现有的数据库连接，而不是再重新建立一个
+>
+>   释放空闲时间超过最大空闲时间的数据库连接来避免因为没有释放数据库连接而引起的数据库连接遗漏
+
+
+
+### 好处：
+
+-   资源重用
+-   提升系统响应速度
+-   避免数据库连接遗漏
+
+
+
+<p align="center"><img src="https://gitee.com/wxvirus/img/raw/master/img/20211202210950.png" alt="数据库连接池" /></p>
+
+
+
+## 数据库连接池的实现
+
+[github wiki地址](https://github.com/alibaba/druid/wiki)
+
+标准接口：**DataSource**
+
+-   官方Sun提供的数据库连接池标准接口，由第三方组织实现此接口
+
+-   功能：获取连接
+
+    ```java
+    // 标准方法
+    Connection getConnection();
+    ```
+
+
+
+常见的数据库连接池：
+
+-   DBCP
+-   C3P0
+-   Druid
+
+---
+
+**Druid(德鲁伊)**
+
+-   Druid连接池是阿里巴巴开源的数据库连接池项目
+-   功能强大、性能优秀，是Java语言最好的数据库连接池之一
+
+
+
+### 使用步骤
+
+1.   导入jar包`druid-1.1.12.jar`
+2.   定义配置文件
+3.   加载配置文件
+4.   获取数据库连接池对象
+5.   获取连接
+
+
+
+配置文件
+
+```properties
+driverClassName=com.mysql.jdbc.Driver
+url=jdbc:mysql:///db1?useSSL=false&useServerPrepStmts=true
+username=root
+password=
+# 初始化连接池数量
+initialSize=5
+# 最大连接数量
+maxActive=10
+# 最大等待时间
+maxWait=3000
+```
+
+```java
+package com.wx.druid;
+
+import com.alibaba.druid.pool.DruidDataSourceFactory;
+
+import javax.sql.DataSource;
+import java.io.FileInputStream;
+import java.sql.Connection;
+import java.util.Properties;
+
+public class DruidDemo {
+    public static void main(String[] args) throws Exception {
+        // 1. 导入jar包
+        // 2. 定义配置文件
+        // 3. 加载配置文件
+        // 4. 获取连接池对象
+
+        Properties prop = new Properties();
+        
+        // 注意路径问题
+        prop.load(new FileInputStream("jdbc-demo/src/druid.properties"));
+
+        DataSource dataSource = DruidDataSourceFactory.createDataSource(prop);
+
+        // 5. 获取数据库连接 Connection
+        Connection connection = dataSource.getConnection();
+
+        System.out.println(connection);
+
+        // 获取当前项目目录
+//        System.out.println(System.getProperty("user.dir"));
+    }
+}
+
+```
+
+输出
+
+```bash
+信息: {dataSource-1} inited
+com.mysql.jdbc.JDBC4Connection@21a06946
+```
+
