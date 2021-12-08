@@ -574,3 +574,299 @@ public class UserDaoTest {
 ### select
 
 >   选择，查询语句
+
+-   id：就是对应的`namespace`中的方法名
+-   `resultType`：SQL语句执行的返回值
+-   `parameterType`：参数类型
+
+
+
+### 增删改查
+
+```java
+package com.wx.dao;
+
+import com.wx.pojo.User;
+
+import java.util.List;
+
+// 等价于以后的mapper
+public interface UserMapper {
+    // 查询所有的用户信息保存到列表里
+    List<User> getUserList();
+
+    // 根据id获取用户信息
+    User getIdUser(int id);
+
+    // 插入一个用户
+    int insertUser(User user);
+
+    // 修改用户
+    int updateUser(User user);
+
+    // 删除一个用户
+    int deleteUser(int id);
+}
+
+```
+
+`UserMapper.xml`
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wx.dao.UserMapper">
+    <select id="getUserList" resultType="com.wx.pojo.User">
+        select *
+        from mybatis.user
+    </select>
+
+    <select id="getIdUser" resultType="com.wx.pojo.User" parameterType="int">
+        select * from mybatis.user where id=#{id}
+    </select>
+    
+    <insert id="insertUser" parameterType="com.wx.pojo.User">
+        insert into mybatis.user (id,name,pwd) values (#{id}, #{name}, #{pwd});
+    </insert>
+
+    <update id="updateUser" parameterType="com.wx.pojo.User">
+        update mybatis.user set name = #{name}, pwd = #{pwd} where id = #{id}
+    </update>
+
+    <delete id="deleteUser" parameterType="int">
+        delete from mybatis.user where id = #{id}
+    </delete>
+</mapper>
+```
+
+测试
+
+```java
+package com.wx.dao;
+
+import com.wx.pojo.User;
+import com.wx.utils.MybatisUtils;
+import org.apache.ibatis.session.SqlSession;
+import org.junit.Test;
+
+import java.util.List;
+
+public class UserMapperTest {
+
+    @Test
+    public void test() {
+        // 获取 sqlSession
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        // 方式1： getMapper
+        // 执行SQL
+        // 获取到dao的对象  UserDao => 后续可以重命名为 UserMapper
+        UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+        List<User> userList = userMapper.getUserList();
+
+        for (User user : userList) {
+            System.out.println(user);
+        }
+
+        // 方式2
+//        List<User> userList2 = sqlSession.selectList("com.wx.dao.UserDao.getUserList");
+//        for (User user : userList2) {
+//            System.out.println(user);
+//        }
+
+        // 关闭sqlSession
+        sqlSession.close();
+    }
+
+    @Test
+    public void testGetUserById() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        User user = mapper.getIdUser(2);
+        System.out.println(user);
+        sqlSession.close();
+    }
+
+    @Test
+    public void insertUser() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        int res = mapper.insertUser(new User(5, "无解", "123123"));
+        if (res > 0) {
+            System.out.println("插入成功");
+        }
+        //提交事务！！！
+        sqlSession.commit();
+        //关闭连接
+        sqlSession.close();
+    }
+
+    @Test
+    public void updateUser() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        mapper.updateUser(new User(4, "哈哈哈", "123456"));
+
+        // 提交事务 !!!
+        sqlSession.commit();
+
+        sqlSession.close();
+    }
+
+    @Test
+    public void deleteUser() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        int res = mapper.deleteUser(4);
+        if (res > 0) {
+            System.out.println("删除成功");
+        }
+
+        // 提交事务 !!!
+        sqlSession.commit();
+
+        sqlSession.close();
+    }
+}
+
+```
+
+:::warning
+
+>   增删改需要提交事务，否则测试执行表中不会有影响。
+
+:::
+
+
+
+---
+
+步骤总结：
+
+1.   编写接口
+2.   编写对应的`mapper`中的SQL语句
+3.   测试
+
+
+
+## Map和模糊查询（野路子）
+
+### Map传递参数
+
+假设我们的实体类或者数据库中的表字段过多，我们应该考虑使用`Map`
+
+```java
+ // 万能的map
+int addUser(Map<String, Object> map); // 接口
+```
+
+```xml
+<!--传递map的key-->
+<insert id="addUser" parameterType="map">
+    insert into mybatis.user (id, name, pwd)
+    values (#{userId}, #{userName}, #{passWord});
+</insert>
+```
+
+测试
+
+```java
+@Test
+public void insertUser2() {
+    SqlSession sqlSession = MybatisUtils.getSqlSession();
+    UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+    Map<String, Object> map = new HashMap<>();
+    map.put("userId", 6);
+    map.put("userName", "无解");
+    map.put("passWord", "21321312");
+
+    int res = mapper.addUser(map);
+    if (res > 0) {
+        System.out.println("插入成功");
+    }
+    //提交事务！！！
+    sqlSession.commit();
+    //关闭连接
+    sqlSession.close();
+}
+```
+
+>   Map传递参数，直接在SQL中取出key即可！`parameterType="map"`
+>
+>   对象传递参数，直接在SQL中去对象的属性即可！`parameterType="Object"`
+>
+>   只有一个基本类型参数的情况下，可以直接在SQL中取到！`省略不写`
+>
+>   **多个参数用Map，或者注解！**
+
+---
+
+### 模糊查询
+
+>   Java代码执行的时候，传递通配符`%%`，最好在`xml`文件里写死，防止用户进行乱输入导致SQL注入的问题。
+
+:::danger 错误示范
+
+```xml
+<select id="getUserLike" resultType="com.wx.pojo.User">
+    select * from mybatis.user where name like #{value}
+</select>
+```
+
+```java
+@Test
+public void getUserLike() {
+    SqlSession sqlSession = MybatisUtils.getSqlSession();
+    UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+    List<User> userList = mapper.getUserLike("%李%");
+    for (User user : userList) {
+        System.out.println(user);
+    }
+
+    //关闭连接
+    sqlSession.close();
+}
+```
+
+:::
+
+
+
+:::tip 正确示范
+
+```xml
+<select id="getUserLike" resultType="com.wx.pojo.User">
+    select * from mybatis.user where name like "%"#{value}"%"
+</select>
+```
+
+```java
+@Test
+public void getUserLike() {
+    SqlSession sqlSession = MybatisUtils.getSqlSession();
+    UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+    List<User> userList = mapper.getUserLike("李");
+    for (User user : userList) {
+        System.out.println(user);
+    }
+
+    //关闭连接
+    sqlSession.close();
+}
+```
+
+:::
+
+
+
+## 配置解析
+
+### 核心配置文件
+
+`mybatis-config.xml`名字可以随便取，但是官方建议这么叫。
+
