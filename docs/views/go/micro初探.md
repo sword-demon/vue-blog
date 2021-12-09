@@ -82,6 +82,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
+// 下面的是后续下载依赖生成的 一开始就一个module名称和go的版本
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
@@ -279,3 +280,10 @@ func main() {
 
 
 
+
+
+### 小结
+
+-   Micro组成：运行时、框架、客户端
+-   运行时组成：api、broker、network、new等
+-   Go-micro组件，框架，通信模型，如何编写一个服务

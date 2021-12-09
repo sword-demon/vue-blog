@@ -870,3 +870,95 @@ public void getUserLike() {
 
 `mybatis-config.xml`名字可以随便取，但是官方建议这么叫。
 
+
+
+```
+configuration（配置）
+properties（属性）
+settings（设置）
+typeAliases（类型别名）
+typeHandlers（类型处理器）
+objectFactory（对象工厂）
+plugins（插件）
+environments（环境配置）
+environment（环境变量）
+transactionManager（事务管理器）
+dataSource（数据源）
+databaseIdProvider（数据库厂商标识）
+mappers（映射器）
+```
+
+
+
+### 环境配置(environments)
+
+MyBatis可以配置成适应多种环境
+
+**但是最终`SqlSessionFactory`实例只能选择一种环境**
+
+Mybatis默认的事务管理器就是`JDBC`，连接池：`POOLED`
+
+
+
+### 属性(properties)
+
+>   我们可以通过`properties`来引用配置文件。
+>
+>   这些属性可以在外部进行配置，并可以进行动态替换。你既可以在典型的 Java 属性文件中配置这些属性，也可以在 properties 元素的子元素中设置【典型案例：db.properties】
+
+编写一个数据库配置文件：`db.properties`
+
+```properties
+driver=com.mysql.jdbc.Driver
+url=jdbc:mysql:///mybatis?useSSL=false&useUnicode=true&characterEncoding=UTF-8
+username=root
+password=1
+```
+
+在核心配置文件中引入
+
+:::warning 注意xml的配置顺序
+
+>   在`xml`中所有的标签都可以规定其顺序，它有自己的固定的顺序,`properties`必须写在最上面
+
+:::
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!--核心配置文件-->
+<configuration>
+
+    <!-- 引入外部配置文件 -->
+    <properties resource="db.properties" />
+
+    <environments default="development">
+
+        <environment id="development">
+            <!-- 事务管理 使用的是JDBC的事务管理 -->
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${username}"/>
+                <property name="password" value="${password}"/>
+            </dataSource>
+        </environment>
+
+    </environments>
+
+    <!-- 每一个mapper.xml 都需要在mybatis核心配置文件中注册! -->
+    <mappers>
+        <mapper resource="com/wx/dao/UserMapper.xml" />
+    </mappers>
+</configuration>
+```
+
+:::tip 注意
+
+>   如果两个文件有同一个字段，配置文件优先使用`db.properties`里的配置信息
+
+:::
+
