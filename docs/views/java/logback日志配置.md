@@ -13,6 +13,8 @@ tags:
 
 
 
+# springboot初始项目配置案例
+
 ## logback日志配置
 
 >   经历了最近log4j2的漏洞问题，这里采用的是logback进行日志配置
@@ -168,4 +170,174 @@ server.port=8880 # 端口自己定义
 //            佛祖保佑       永不宕机     永无BUG                    //
 ////////////////////////////////////////////////////////////////////
 ```
+
+
+
+## Springboot hello world
+
+>   我们写一个案例：在页面输出`hello world`
+
+我们需要创建一个`controller`的包
+
+`com.xxx.xxx.TestController.java`
+
+**不能写超出启动类外**
+
+```java
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class TestController {
+
+    @RequestMapping("/hello")
+    public String hello() {
+        return "hello world";
+    }
+}
+
+```
+
+进行访问：[http://127.0.0.1:8880/hello](http://127.0.0.1:8880/hello)
+
+如果出现：“hello world” 即代表成功。
+
+---
+
+为什么启动类能够识别到这个控制器呢？
+
+因为启动类被它的注解进行修饰
+
+```java
+@ComponentScan(
+    excludeFilters = {@Filter(
+    type = FilterType.CUSTOM,
+    classes = {TypeExcludeFilter.class}
+), @Filter(
+    type = FilterType.CUSTOM,
+    classes = {AutoConfigurationExcludeFilter.class}
+)}
+)
+public @interface SpringBootApplication {}
+```
+
+:::tip 扫描
+
+`@ComponentScan` 只会扫描这个类所在的包下面的子包，如果和`controller`包没有包含关系，就会扫描不倒，出现页面访问`404`
+
+**但是如果你就想让启动类换一个位置，比如：`com.xxx.config`下，我们需要在启动类上加上扫描注解，重新扫描包的位置**
+
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.ComponentScan;
+
+// 一般写到第二个就行了，写第三个也无所谓
+@ComponentScan("com.xxx")
+@SpringBootApplication
+public class XxxxApplication {
+
+    private static final Logger LOG = LoggerFactory.getLogger(XxxxApplication.class);
+
+    public static void main(String[] args) {
+        SpringApplication app = new SpringApplication(XxxxApplication.class);
+        Environment env = app.run(args).getEnvironment();
+        LOG.info("启动成功!");
+        LOG.info("地址: \thttp://127.0.0.1:{}", env.getProperty("server.port"));
+    }
+}
+```
+
+**注意：不要只写`com`会扫描到第三方的`jar`包，出错非常难排查。**
+
+
+
+后面如果会有真的第三方的包你需要进行扫描的，可以进行输如列表形式来扫描多个包的效果：
+
+```java
+@ComponentScan({"com.xxx", "com.text"})
+```
+
+:::
+
+
+
+### 使用IDEA自带的HTTP CLIENT测试接口
+
+在根目录新建`http`目录，且新建测试脚本`test.http`，必须以`http`为后缀结尾
+
+输入快捷键`gtr`便可快速生成测试代码
+
+```http
+GET http://localhost:8880/hello
+Accept: application/json
+
+###
+```
+
+:::warning 警告
+
+这里的`###`必须保留，如果写多个，就往下继续写即可。
+
+:::
+
+
+
+测试结果
+
+```bash
+GET http://localhost:8880/hello
+
+HTTP/1.1 200 
+Content-Type: application/json
+Content-Length: 11
+Date: Sat, 11 Dec 2021 06:57:41 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+hello world
+
+Response code: 200; Time: 99ms; Content length: 11 bytes
+
+```
+
+
+
+类似单元测试代码
+
+```http
+GET http://localhost:8880/hello
+#Accept: application/json
+
+> {%
+client.test("test-hello", function () {
+    client.log("测试/hello接口")
+    client.log(response.body);
+    client.log(JSON.stringify(response.body));
+    client.assert(response.status === 200, "返回码不是200");
+    client.assert(response.body === "hello world", "结果验证失败");
+});
+%}
+
+###
+
+
+```
+
+```bash
+Testing started at 3:07 下午 ...
+测试/hello接口
+hello world
+"hello world"
+
+```
+
+
+
+而这些测试的记录会存在`.idea`的文件目录下，我们可以去进行查看。
+
+
 
