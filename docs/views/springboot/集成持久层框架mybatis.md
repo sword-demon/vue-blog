@@ -1,5 +1,5 @@
 ---
-title: '继承持久层框架Mybatis'
+title: '集成持久层框架Mybatis'
 date: 2021-12-11 19:59:15
 # 永久链接
 permalink: '/springboot/mybatis'
@@ -292,3 +292,4 @@ mybatis:
 如上所见，我在`yml`格式的里面写了`properties`的格式，导致报错
 
 :::
+
