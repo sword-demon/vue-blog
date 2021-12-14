@@ -85,3 +85,4 @@ public class TestController {
 到了生产环境的时候，我们可能在配置中心忘记配置有关的配置项，我们则需要在`@Value`注解中加上`:默认值`即可，如：`@Value("${test.hello:TEST}")`，当没有配置值的时候就会读取默认值。
 
 :::
+
