@@ -54,3 +54,4 @@ source /etc/profile
 ```
 
 输出`java -version`进行检测
+
