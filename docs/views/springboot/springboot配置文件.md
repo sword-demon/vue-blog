@@ -86,3 +86,31 @@ public class TestController {
 
 :::
 
+
+
+## 同一目录下的`application`和`bootstrap`
+
+-   `bootstrap`优先级高于`application`，优先被加载
+-   `bootstrap`用于应用程序上下文的引导阶段，由父`ApplicationContext`加载
+-   `bootstrap`是系统级别的配置(不变的参数)，`application`是应用级别的配置
+
+
+
+## 不同位置的配置文件加载顺序(优先级)
+
+
+
+-   `file`：`./config/` 优先级最高(项目根路径下的`config`)
+-   `file`：`./` 优先级第二(项目根路径下)
+-   `classpath:/config` 优先级第三(项目`resources/config`下)
+-   `classpath:/` 优先级第四(项目`resources`目录下)
+
+
+
+:::tip
+
+**高优先级覆盖低优先级相同配置**	
+
+**多个配置文件互补**
+
+:::

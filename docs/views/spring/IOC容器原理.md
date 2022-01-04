@@ -191,3 +191,155 @@ Bean管理指的是两个操作：
 
 ### 基于xml方式注入属性
 
+1.   DI：依赖注入，就是注入属性，是IOC中的一种具体实现
+
+第一种注入方式：使用`set`方法进行注入
+
+-   创建类
+-   创建属性
+-   创建属性对应的`set`方法
+
+```java
+public class Book {
+    private String bname;
+
+    public void setBname(String bname) {
+        this.bname = bname;
+    }
+
+    public static void main(String[] args) {
+        Book book = new Book();
+        book.setBname("abc");
+    }
+}
+
+```
+
+
+
+在Spring配置文件配置对象创建，配置属性注入
+
+```xml
+<!-- set方法注入属性 -->
+<bean id="book" class="com.wx.spring5.Book">
+    <!-- 使用 property 完成属性注入
+         name: 类里面属性名称
+         value: 向属性注入的值
+         -->
+    <property name="bname" value="易筋经"></property>
+</bean>
+```
+
+```java
+ @Test
+public void testBook1() {
+    // 1. 加载spring配置文件
+    ApplicationContext context =
+        new ClassPathXmlApplicationContext("bean1.xml");
+    // 2. 获取配置创建的对象
+    Book book = context.getBean("book", Book.class);
+
+    System.out.println(book);
+    book.testDemo();
+}
+```
+
+输出：
+
+```bash
+com.wx.spring5.Book@462d5aee
+易筋经
+```
+
+
+
+
+
+第二种注入方式：有参构造注入
+
+```java
+/**
+ * 有参构造注入
+ */
+public class Orders {
+
+    private String orderName;
+    private String address;
+
+    public Orders(String orderName, String address) {
+        this.orderName = orderName;
+        this.address = address;
+    }
+}
+
+```
+
+有参构造配置文件
+
+```xml
+ <!-- 有参构造注入属性 -->
+<bean id="orders" class="com.wx.spring5.Orders">
+    <constructor-arg name="orderName" value="abc"/>
+    <constructor-arg name="address" value="江苏省"/>
+</bean>
+```
+
+如果有索引
+
+```xml
+ <!-- 有参构造注入属性 -->
+<bean id="orders" class="com.wx.spring5.Orders">
+    <constructor-arg index="0" value="abc"/>
+    <constructor-arg index="1" value="江苏省"/>
+</bean>
+```
+
+第0个就是第一个属性，依次往下。
+
+
+
+测试代码
+
+```java
+@Test
+public void testOrders() {
+    // 1. 加载spring配置文件
+    ApplicationContext context =
+        new ClassPathXmlApplicationContext("bean1.xml");
+    // 2. 获取配置创建的对象
+    Orders orders = context.getBean("orders", Orders.class);
+
+    System.out.println(orders);
+    orders.ordersTest();
+}
+```
+
+
+
+### p名称空间注入(了解)
+
+1.   使用p名称空间注入，可以简化基于`xml`配置方式
+
+     第一步：添加p名称空间在配置文件中
+
+     ```xml
+     <?xml version="1.0" encoding="UTF-8"?>
+     <beans xmlns="http://www.springframework.org/schema/beans"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:p="http://www.springframework.org/schema/p"
+            xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+     ```
+
+     ```xml
+     xmlns:p="http://www.springframework.org/schema/p"
+     ```
+
+     第二步：进行属性注入，在`bean`标签里面进行操作
+
+     ```xml
+     <!-- set方法注入属性 -->
+     <bean id="book" class="com.wx.spring5.Book" p:bname="降龙十八掌">
+     </bean>
+     ```
+
+     简化了操作。
