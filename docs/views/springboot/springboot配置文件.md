@@ -114,3 +114,36 @@ public class TestController {
 **多个配置文件互补**
 
 :::
+
+
+
+## 配置测试，生产环境
+
+`application.yml`
+
+```yaml
+spring:
+  profiles:
+    # 指明使用什么环境
+    active: dev
+
+server:
+  port: 8000
+```
+
+`application-dev.yml`
+
+```yaml
+server:
+  servlet:
+    context-path: /dev
+```
+
+`application-prod.yml`
+
+```yaml
+server:
+  servlet:
+    context-path: /prod
+```
+
