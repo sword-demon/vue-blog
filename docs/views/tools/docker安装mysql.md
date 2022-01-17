@@ -38,6 +38,8 @@ sudo docker run -p 3306:3306 --name mysql \
 -d mysql:5.7
 ```
 
+-   **-p:** 指定端口映射，格式为：**主机(宿主)端口:容器端口**
+
 <p align="center"><img src="https://gitee.com/wxvirus/img/raw/master/img/20220110001837.png" alt="参数说明" /></p>
 
 
@@ -135,3 +137,62 @@ sudo docker update mysql --restart=always
 ```
 
 设置mysql在docker启动的时候就会自动重启。
+
+
+
+## 本地连接问题
+
+>   Docker启动mysql和配置远程登录，错误ERROR 1130: Host '....' is not allowed to connect to this MySQL server
+
+主要是`mysql`没有授权远程登录。
+
+
+
+我们使用
+
+```bash
+docker exec -it 可以写容器的id/或者容器名称 /bin/bash
+```
+
+进入到容器内部，在容器内部登录`mysql`，授权用户可以远程登录，密码是`root`，你们是啥密码和是啥用户就改成对应的用户和密码即可。
+
+```bash
+grant all privileges on *.* to root@"%" identified by "root" with grant option;
+flush privileges;
+```
+
+这样就可以远程登录`mysql`了。
+
+
+
+---
+
+或者登录`mysql`成功之后，可以使用以下命令来实现，比较简单。
+
+```bash
+use mysql;
+update user set host='%' where user='root';
+```
+
+
+
+
+
+:::danger 注意
+
+如果删除容器，就无法连接了。
+
+:::
+
+
+
+```bash
+docker run -it -d --name emos-mongo -p 27017:27017 \
+-v /Users/wangxin/mydata/mongo:/etc/mongo -m 500m \
+-e MONGO_INITDB_ROOT_USERNAME=admin \
+-e MONGO_INITDB_ROOT_PASSWORD=admin \
+-e TZ=Asia/Shanghai \
+mongo:4.4.7 --config /etc/mongo/mongod.conf
+
+```
+
