@@ -91,3 +91,50 @@ SELECT COUNT(*) as count FROM `nacos_config`.`tenant_info`;
 ```
 
 如果有内容了，说明你添加成功了。基础的配置到这里也就完成了。
+
+
+
+## Nacos集群部署方式
+
+进入到`nacos/conf`文件夹，新建`cluster.conf`文件，并填充内容
+
+```txt
+172.16.3.41:8848
+172.16.3.41:8858
+172.16.3.41:8868
+```
+
+`ip`是你的本机的ip即可
+
+
+
+:::tip
+
+集群必须要使用`MySQL(可以是 PG 或者是其他数据库)`作为持久化的方式，因为需要能够访问到同一个数据源。
+
+:::
+
+
+
+我们在下载的`nacos`外面，复制出来3份`nacos`分别起名为不同的端口为后缀
+
+```bash
+cp -p -r ./nacos nacos-8848
+cp -p -r ./nacos nacos-8858
+cp -p -r ./nacos nacos-8868
+```
+
+
+
+分别去对应的文件夹内的`nacos-端口/conf/application.properties`修改端口号
+
+
+
+启动三个`nacos`，不带任何参数标识集群启动
+
+```bash
+./nacos-8848/bin/startup.sh
+./nacos-8858/bin/startup.sh
+./nacos-8868/bin/startup.sh
+```
+
