@@ -119,8 +119,81 @@ fmt.Println(unsafe.Sizeof(age))
 
 
 
+:::tip 注意
+
+它没有`float`类型
+
+`float32`最大值：`3.4028234663852886e+38`
+
+`float64`最大值：`1.7976931348623157e+308`
+
+
+
+>   为什么64位的float最大值远大于int64，float底层存储和int的存储是不一样的
+>
+>   float32和float64两者占用内存不一样，64位的最大数和精度都比32位高
+
+:::
+
+
+
+```go
+var age int = 18
+fmt.Println(age)
+fmt.Println(unsafe.Sizeof(age))
+
+// float 类型
+var weight float64 = 71.2
+fmt.Println(weight)
+fmt.Println(unsafe.Sizeof(weight))
+fmt.Println(math.MaxFloat32)
+fmt.Println(math.MaxFloat64)
+fmt.Printf("%T\n", weight)
+fmt.Printf("%T\n", age)
+```
+
+```bash
+18
+8
+71.2
+8
+3.4028234663852886e+38
+1.7976931348623157e+308
+float64
+int
+
+```
+
+
+
 ### 其他
 
--   byte 等于 uint8
--   rune 等于 int32
--   uint 32 或 64位
+-   byte 等于 uint8 `type byte = uint8` 实际上是`uint8`的别称
+-   rune 等于 int32 `type rune = int32` 和字符处理有关
+-   uint 32 或 64位 自动选择32位或者64位的
+
+
+
+### 字符
+
+>   字符的本质是一个数字，可以进行加减乘除
+
+```go
+b := 'b'
+fmt.Println(reflect.TypeOf(b + 1))
+fmt.Printf("b+1=%c", b + 1)
+```
+
+```bash
+int32
+b+1=c
+
+```
+
+:::tip 注意
+
+1.   b + 1 可以和数字金蒜
+2.   b + 1 的类型是`int32`
+3.   int类型可以直接变成字符
+
+:::
