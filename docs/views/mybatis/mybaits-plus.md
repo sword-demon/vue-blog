@@ -239,3 +239,32 @@ class DemomptestApplicationTests {
 
 ```
 
+
+
+### 查看SQL输出日志
+
+进行配置
+
+```properties
+# mybatis日志
+mybatis-plus.configuration.log-impl=org.apache.ibatis.logging.stdout.StdOutImpl
+```
+
+```bash
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@21fdfefc] was not registered for synchronization because synchronization is not active
+2022-02-17 22:29:36.118  INFO 21845 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2022-02-17 22:29:36.462  INFO 21845 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+JDBC Connection [HikariProxyConnection@1861329337 wrapping com.mysql.cj.jdbc.ConnectionImpl@5fbdc49b] will not be managed by Spring
+==>  Preparing: SELECT id,name,age,email FROM user 
+==> Parameters: 
+<==    Columns: id, name, age, email
+<==        Row: 1, Jone, 18, 123@qq.com
+<==        Row: 2, jack, 19, dwq@qq.com
+<==        Row: 3, tom, 20, tom@qq.com
+<==      Total: 3
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@21fdfefc]
+[User(id=1, name=Jone, age=18, email=123@qq.com), User(id=2, name=jack, age=19, email=dwq@qq.com), User(id=3, name=tom, age=20, email=tom@qq.com)]
+
+```
+
