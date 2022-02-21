@@ -89,7 +89,155 @@ docker-compose up exec workspace bash
 
 
 
+克隆一个laravel代码，默认克隆下来是最新的版本，我们需要切换到我们支持的版本上去。
+
+
+
 ![文件映射关系](https://gitee.com/wxvirus/img/raw/master/img/20220221211556.png)
 
 我这里目录放的有点草率了，导致当前上一级目录都被映射到容器内部去了，浪费了。所以你们需要找一个当前`laradock`目录上一级是个除了`laradock`以外没啥东西的地方去弄比较合适。
 
+
+
+
+
+## Laravel配置
+
+我们需要配置`composer`使用阿里云镜像
+
+```bash
+composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/
+```
+
+复制一份环境配置文件
+
+```bash
+cp .env.example .env
+```
+
+安装Laravel需要的依赖
+
+```bash
+composer install -vvv
+```
+
+等待下载安装完成即可。
+
+
+
+还需要对`.env`的`key`进行配置，因为我们是直接拉取的一个代码，而不是使用`Laravel`的命令或者`composer`安装的
+
+```bash
+cd laravel
+php artisan key:generate
+```
+
+
+
+配置完成之后，我们最终还是需要在网页进行访问的，所以还需要配置`nginx`
+
+>   到我们的`laradock`目录下的`nginx`下的`sites`目录里有一个`laravel.conf.example`文件，我们进行复制一份，去除后面的`.example`即可。
+
+
+
+**注意：**
+
+此时我们的`nginx`配置文件中的案例，是指向的是对的，
+
+```nginx
+#server {
+#    listen 80;
+#    server_name laravel.com.co;
+#    return 301 https://laravel.com.co$request_uri;
+#}
+
+server {
+
+    listen 80;
+    listen [::]:80;
+
+    # For https
+    # listen 443 ssl;
+    # listen [::]:443 ssl ipv6only=on;
+    # ssl_certificate /etc/nginx/ssl/default.crt;
+    # ssl_certificate_key /etc/nginx/ssl/default.key;
+
+    # 配置虚拟域名
+    server_name laravel.test;
+    # 主要是这里，必须指向我们真确的目录
+    root /var/www/laravel/public;
+    index index.php index.html index.htm;
+
+    location / {
+         try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        try_files $uri /index.php =404;
+        fastcgi_pass php-upstream;
+        fastcgi_index index.php;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        #fixes timeouts
+        fastcgi_read_timeout 600;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt/;
+        log_not_found off;
+    }
+
+    error_log /var/log/nginx/laravel_error.log;
+    access_log /var/log/nginx/laravel_access.log;
+}
+
+```
+
+
+
+要想使得`nginx`生效，我们还得重新启动一下`nginx`
+
+
+
+重启`nginx`的几种方式
+
+```bash
+# 进入到laradock目录
+docker-compose exec nginx bash
+
+# 或者使用docker ps 查看容器的id
+docker-compose exec 容器id bash
+
+# 或者直接在任意目录下使用docker重启
+docker restart 容器id
+```
+
+
+
+## 配置虚拟域名
+
+如上所述，我们配置了`http://laravel.test`的虚拟域名
+
+我们在`Mac`中有一个软件：`SwitchHosts`可以轻松做到。`Windows`下你们可以自己去找到`hosts`文件进行修改即可。
+
+![hosts](https://gitee.com/wxvirus/img/raw/master/img/20220221215315.png)
+
+配置完成之后，我们尝试`ping`通一下
+
+```bash
+ping laravel.test
+```
+
+![ping](https://gitee.com/wxvirus/img/raw/master/img/20220221215419.png)
+
+
+
+我们在浏览器上访问是否可以
+
+![访问通过](https://gitee.com/wxvirus/img/raw/master/img/20220221215526.png)
