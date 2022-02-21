@@ -186,13 +186,3 @@ update user set host='%' where user='root';
 
 
 
-```bash
-docker run -it -d --name emos-mongo -p 27017:27017 \
--v /Users/wangxin/mydata/mongo:/etc/mongo -m 500m \
--e MONGO_INITDB_ROOT_USERNAME=admin \
--e MONGO_INITDB_ROOT_PASSWORD=admin \
--e TZ=Asia/Shanghai \
-mongo:4.4.7 --config /etc/mongo/mongod.conf
-
-```
-
