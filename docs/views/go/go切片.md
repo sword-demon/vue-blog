@@ -163,3 +163,38 @@ s2=[5 6], len(s2)=2, cap(s2)=3
 
 ```
 
+
+
+## 切片元素操作
+
+```go
+func slice5() {
+	s1 := []int{2, 4, 6, 8}
+	s2 := make([]int, 16)
+	// 拷贝切片
+	copy(s2, s1)
+	printSlice(s2)
+
+	fmt.Println("deleting element from slice")
+	s2 = append(s2[:3], s2[4:]...)
+	printSlice(s2)
+
+	// 删除头尾
+	fmt.Println("Popping from front")
+	front := s2[0]
+	s2 = s2[1:]
+	fmt.Println(front)
+	printSlice(s2)
+
+	fmt.Println("Popping from tail")
+	tail := s2[len(s2)-1]
+	s2 = s2[:len(s2)-1]
+	fmt.Println(tail)
+	printSlice(s2)
+}
+
+func main() {
+	slice5()
+}
+```
+
