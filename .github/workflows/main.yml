@@ -20,7 +20,7 @@ jobs:
 
             # 生成静态文件
             - name: Build
-              run: increase-memory-limit && npm install && npm run docs:build --max_old_space_size=8000
+              run: npm install && npm run docs:build --max_old_space_size=8000
 
             # 部署到 GitHub Pages
             - name: Deploy
