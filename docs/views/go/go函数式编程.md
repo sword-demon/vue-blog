@@ -259,7 +259,7 @@ func (node *Node) TraverseFunc(f func(*Node)) {
 
 
 
-go语言闭包的应用：
+<span style="color: green;font-size: 30px;">go语言闭包的应用</span>：
 
 -   更为自然，不需要修饰如何访问自由变量
 -   没有`Lambda`表达式，但是有匿名函数
@@ -331,5 +331,15 @@ func writeFile(filename string) {
 		}
 	}
 }
+```
+
+
+
+## 函数类型和函数签名
+
+>   只要以`type`关键字开头的都是定义类型。
+
+```go
+type f func() // 自定义类型 类型名 f 具体是一个函数类型 没有参数没有返回值
 ```
 
