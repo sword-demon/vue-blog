@@ -343,3 +343,153 @@ func writeFile(filename string) {
 type f func() // 自定义类型 类型名 f 具体是一个函数类型 没有参数没有返回值
 ```
 
+
+
+## 函数作为参数
+
+```go
+func f1(x, y int) int {
+    return x + y
+}
+```
+
+>   现在有一个需求，不确定，这个函数是想要相加还是相减，或者相乘：
+>
+>   共性：都是两个参数
+>
+>   解决：把具体要做什么事，让调用方自己决定
+
+```go
+func f1(x, y int, op func(int, int) int) int {
+    res := op(x, y)
+    return res
+}
+```
+
+如果嵌入的比较麻烦，看不懂，我们可以把嵌入的函数参数拿出来，使用函数签名来代替。
+
+```go
+type calcuation func(int, int) int
+
+func f1(x, y int, op calcuation) int {
+    res := op(x, y)
+    return res
+}
+
+func add(x, y int) int {
+    return x + y
+}
+
+func main() {
+    f1(10, 20, add) // 把函数当成参数传递进来
+}
+```
+
+
+
+## 函数作为返回值
+
+函数也可以作为返回值：
+
+```go
+func do(s string) (func(int, int) int, error) {
+	switch s {
+	case "+":
+		return add, nil
+	case "-":
+		return sub, nil
+	default:
+		err := errors.New("无法识别的操作符")
+		return nil, err
+	}
+}
+```
+
+如果不想最后具体返回点什么可以这么写
+
+```go
+func do(x, y int, s string) (res func(int, int) int) {
+	switch s {
+	case "+":
+		return add
+	case "-":
+		return sub
+	}
+	return
+}
+```
+
+等于是提前声明了一个返回的值，相当于代码里提前声明了：`var res func(int, int) int`，此时`res = nil`，这个就是命名返回值
+
+>   含义有这么几个：
+
+1.   函数内部声明了变量
+2.   返回值是`res`
+3.   如果`return`后面不带什么，默认就是返回`res`
+
+
+
+## 常用内置函数
+
+|    内置函数    |                             介绍                             |
+| :------------: | :----------------------------------------------------------: |
+|     close      |                    主要用来关闭`channel`                     |
+|      len       |     用来求长度，比如`string, array, slice, map, channel`     |
+|      new       | 用来分配内存，主要用来分配值类型，比如`int, struct`，返回的是指针 |
+|      make      |  用来分配内存，主要用来分配引用类型，比如`chan, map, slice`  |
+|     append     |                用来追加元素到数组、`slice`中                 |
+| panic和recover |                        用来做错误处理                        |
+
+
+
+>   `panic/recover`
+
+Go语言目前是没有异常机制的，但是使用`panic/recover`模式来处理错误。`panic`可以在任意地方引发，但`recover`只有在`defer`调用的函数中有效。先看一个例子：
+
+```go
+func funcA()  {
+	fmt.Println("funcA")
+}
+
+func funcB()  {
+	fmt.Println("funcB")
+}
+
+func funC()  {
+	fmt.Println("funC")
+}
+
+func main() {
+	funcA()
+	funcB()
+	funC()
+}
+```
+
+```go
+func f2()  {
+	defer func() {
+		r := recover() // 尝试恢复崩溃的现场
+		fmt.Println(r)
+	}()
+
+	var m map[string]int
+	m["a"] = 1 // panic 程序就崩了
+	fmt.Println("美好的周末要结束了")
+}
+```
+
+```bash
+assignment to entry in nil map
+```
+
+不会到打印的语句的地方。
+
+
+
+:::warning 注意
+
+1.   `recover()`必须搭配`defer`使用
+2.   `defer`一定要在可能引发`panic`的语句之前定义
+
+:::

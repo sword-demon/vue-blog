@@ -234,3 +234,103 @@ fmt.Println(lengthOfNnRepeatingSubStr("一二三二一"))
 -   使用`range`遍历`key`或者遍历`key value`对
 -   遍历不保证顺序，如果需要顺序，需手动对`key`排序
 -   使用`len`获得元素个数
+
+
+
+## HashMap的基本方案
+
+-   开放寻址法
+-   拉链法
+
+
+
+### 开放寻址法
+
+:::tip 大致过程
+
+1.   首先有一个底层数组已经存了一部分的`KV`值
+2.   进来一个新的`a:A`键值
+3.   首先经过`Hash`，`hash`的是`k`，哈希成一个数据，然后对数组的长度取模，可以算出这个键要去数组的几号位
+4.   假如要去的目标的地址已经有人占用了，就向后去寻找目标的地址，如果向后的也被占了，就继续往后，遇到空闲的，就进行分配
+
+:::
+
+![开放寻址1](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220517215156.png)
+
+
+
+
+
+![xunzhi](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220517215514.png)
+
+>   读取也是差不多的一个流程，如果哈希再经过取模之后，从1号位开始往后找，直到找到为止。
+
+
+
+
+
+### 拉链法
+
+:::tip 主要流程
+
+1.   同样的也会经过hash然后取模，找到位置
+2.   但是对于的位置并不直接放数据，每一个位置上都是存的指针，会额外放的一个像链表的东西
+3.   产生相同的hash的时候，就会在下面继续追加一个键值，这个就解决了`hash`碰撞的位置，纵向的往下拉一个链表
+
+
+
+读取：
+
+1.   同样经过hash取模之后找到位置
+2.   然后找到对应的链表进行遍历即可获取到对应的数据
+
+:::
+
+![拉链法](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220517215746.png)
+
+
+
+![charu](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220517220235.png)
+
+
+
+### Go的map
+
+有一个`map.go`文件里面有一个结构体：`hmap`
+
+```go
+// A header for a Go map.
+type hmap struct {
+	// Note: the format of the hmap is also encoded in cmd/compile/internal/reflectdata/reflect.go.
+	// Make sure this stays in sync with the compiler's definition.
+	count     int // # live cells == size of map.  Must be first (used by len() builtin)
+	flags     uint8
+    // 桶数量的2 的对数
+	B         uint8  // log_2 of # of buckets (can hold up to loadFactor * 2^B items)
+	noverflow uint16 // approximate number of overflow buckets; see incrnoverflow for details
+	hash0     uint32 // hash seed 用于计算k的哈希值的
+
+    // 桶 => 拉链法
+	buckets    unsafe.Pointer // array of 2^B Buckets. may be nil if count==0.
+	oldbuckets unsafe.Pointer // previous bucket array of half the size, non-nil only when growing
+	nevacuate  uintptr        // progress counter for evacuation (buckets less than this have been evacuated)
+
+	extra *mapextra // optional fields
+}
+```
+
+`bmap`代表了`hmap`里面的桶的内容
+
+```go
+// A bucket for a Go map.
+type bmap struct {
+	tophash [bucketCnt]uint8 // key 的哈希值 8个哈希值
+}
+```
+
+```go
+bucketCntBits = 3
+bucketCnt     = 1 << bucketCntBits // 8
+```
+
+![gomap](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220517221233.png)

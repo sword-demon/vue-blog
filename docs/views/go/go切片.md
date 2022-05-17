@@ -344,3 +344,172 @@ func main() {
 
 如果换成`_`来接收，则`a`切片不会发生变化。
 
+
+
+
+
+## 切片的底层
+
+```go
+type slice struct {
+	array unsafe.Pointer // 指向底层的数组
+	len   int
+	cap   int
+}
+```
+
+-   切片的本质是对数组的引用
+
+
+
+### 切片的创建
+
+-   根据数组创建
+
+    ```go
+    arr[0:3] or slice[0:3]
+    ```
+
+-   字面量：编译时插入创建数组的代码
+
+    ```go
+    slice := []int{1, 2, 3}
+    ```
+
+-   `make`：运行时创建数组
+
+    ```go
+    slice := make([]int, 10)
+    ```
+
+---
+
+以字面量来查看底层的过程
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	s := []int{1, 2, 3}
+	fmt.Println(s)
+}
+
+```
+
+
+
+使用`go build -gcflags -S demo4.go `来查看底层编译内容
+
+因为创建切片的语句在第6行，所以我们只截取第6行的内容来进行观察即可：
+
+```
+ 0x001c 00028 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    $type.[3]int(SB), R0
+ 0x0024 00036 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    R0, 8(RSP)
+ 0x0028 00040 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       PCDATA  $1, ZR
+ 0x0028 00040 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       CALL    runtime.newobject(SB)
+ 0x002c 00044 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    16(RSP), R0
+ 0x0030 00048 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    $1, R1
+ 0x0034 00052 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    R1, (R0)
+ 0x0038 00056 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    $2, R2
+ 0x003c 00060 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    R2, 8(R0)
+ 0x0040 00064 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    $3, R2
+ 0x0044 00068 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    R2, 16(R0)
+
+```
+
+-   `$type.[3]int(SB)`：创建了一个大小为3的数组,[3]这个代表创建的是一个数组
+-   `runtime.newobject(SB)`：新建了一个结构体的值，把3个变量塞入了这个结构体
+
+
+
+模拟伪代码：
+
+```go
+arr := [3]int{1, 2, 3}
+
+// 新建一个slice
+slice {
+    arr, // 底层数组
+    3, // 长度3 
+    3, // 容量3
+}
+```
+
+---
+
+使用`make`的是使用底层`runtime`下的`makeslice`方法
+
+```go
+func makeslice(et *_type, len, cap int) unsafe.Pointer {
+	mem, overflow := math.MulUintptr(et.size, uintptr(cap))
+	if overflow || mem > maxAlloc || len < 0 || len > cap {
+		// NOTE: Produce a 'len out of range' error instead of a
+		// 'cap out of range' error when someone does make([]T, bignumber).
+		// 'cap out of range' is true too, but since the cap is only being
+		// supplied implicitly, saying len is clearer.
+		// See golang.org/issue/4085.
+		mem, overflow := math.MulUintptr(et.size, uintptr(len))
+		if overflow || mem > maxAlloc || len < 0 {
+			panicmakeslicelen()
+		}
+		panicmakeslicecap()
+	}
+
+	return mallocgc(mem, et, true)
+}
+```
+
+是在运行时进行创建的。
+
+
+
+### 切片的追加
+
+-   不扩容时，只调整`len`（编译器负责）
+
+-   扩容时，编译时转为调用`runtime.growslice()`
+
+    >   一般情况会以2倍长的底层数组来代替原来的数组(数组必须是连续的内存空间)，所以是代替原来的数组，开一个新的数组，然后是正常的追加。
+    >
+    >   -   如果期望容量 > 当前容量的2倍，就会使用期望容量
+    >   -   如果当前切片的长度小于`1024`，将容量翻倍
+    >   -   如果当前切片的长度大于`1024`，每次增加`25%`
+    >   -   切片扩容时，是**并发不安全**的，注意切片并发要加锁
+
+
+
+:::warning 注意 切片扩容是不安全的
+
+如果有一个协程是读取切片的内容，另外一个协程正在为这个切片扩容，此时，会废弃读的那个底层数组，导致第一个协程可能读取不到原先的数据了。
+
+:::
+
+
+
+扩容的关键性代码
+
+```go
+newcap := old.cap
+doublecap := newcap + newcap
+if cap > doublecap {
+    newcap = cap
+} else {
+    if old.cap < 1024 {
+        newcap = doublecap
+    } else {
+        // Check 0 < newcap to detect overflow
+        // and prevent an infinite loop.
+        for 0 < newcap && newcap < cap {
+            newcap += newcap / 4
+        }
+        // Set newcap to the requested cap when
+        // the newcap calculation overflowed.
+        if newcap <= 0 {
+            newcap = cap
+        }
+    }
+}
+```
+
