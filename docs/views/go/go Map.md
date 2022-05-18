@@ -334,3 +334,133 @@ bucketCnt     = 1 << bucketCntBits // 8
 ```
 
 ![gomap](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220517221233.png)
+
+
+
+### map的初始化
+
+#### 使用make初始化
+
+```go
+m := make(map[string]int, 10)
+```
+
+```
+ 0x001c 00028 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       PCDATA  $1, ZR
+        0x001c 00028 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       CALL    runtime.makemap_small(SB)
+        0x0020 00032 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:6)       MOVD    8(RSP), R0
+        0x0024 00036 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:7)       STP     (ZR, ZR), ""..autotmp_11-16(SP)
+        0x0028 00040 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:7)       MOVD    $type.map[string]int(SB), R1
+        0x0030 00048 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:7)       MOVD    R1, ""..autotmp_11-16(SP)
+        0x0034 00052 (/Users/wujie/GolangProjects/src/rpc-test/demo/demo4.go:7)       MOVD    R0, ""..autotmp_11-8(SP)
+
+```
+
+这里编译下来它调用了`runtime.makemap_small`方法，如果是`windows`可能是`makemap`方法，我现在是`mac m1`架构的
+
+```go
+func makemap_small() *hmap {
+	h := new(hmap)
+	h.hash0 = fastrand()
+	return h
+}
+```
+
+```go
+func makemap(t *maptype, hint int, h *hmap) *hmap {
+	mem, overflow := math.MulUintptr(uintptr(hint), t.bucket.size)
+	if overflow || mem > maxAlloc {
+		hint = 0
+	}
+
+	// initialize Hmap
+	if h == nil {
+		h = new(hmap)
+	}
+	h.hash0 = fastrand()
+
+	// Find the size parameter B which will hold the requested # of elements.
+	// For hint < 0 overLoadFactor returns false since hint < bucketCnt.
+	B := uint8(0)
+	for overLoadFactor(hint, B) {
+		B++
+	}
+	h.B = B
+
+	// allocate initial hash table
+	// if B == 0, the buckets field is allocated lazily later (in mapassign)
+	// If hint is large zeroing this memory could take a while.
+	if h.B != 0 {
+		var nextOverflow *bmap
+		h.buckets, nextOverflow = makeBucketArray(t, h.B, nil)
+		if nextOverflow != nil {
+            // 存储溢出桶
+			h.extra = new(mapextra)
+            // 下一个可用的溢出桶的位置
+			h.extra.nextOverflow = nextOverflow
+		}
+	}
+
+	return h
+}
+```
+
+![mapmake初始化](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220518225710.png)
+
+
+
+#### 字面量初始化
+
+-   元素少于25个时，转化为简单赋值
+
+```go
+hash := map[string]int{
+    "1": 2,
+    "3": 4,
+    "5": 6,
+}
+```
+
+编译的时候直接 给你改成下面的：
+
+```go
+hash := make(map[string]int, 3)
+hash["1"] = 2
+hash["3"] = 4
+hash["5"] = 6
+```
+
+
+
+-   元素多于25个时，转换为循环赋值
+
+```go
+hash := map[string]int{
+    "1": 2,
+    "2": 2,
+    "3": 4,
+    ...
+    "26": 26,
+}
+```
+
+转化
+
+```go
+hash := make(map[string]int, 26)
+// 存放key的数组
+vstatk := []string{"1", "2", "3", ..., "26"}
+// 存放value的数组
+vstatv := []int{1, 2, 3, ..., 26}
+for i := 0; i < len(vstatk); i++ {
+    hash[vstatk[i]] = vstatv[i]
+}
+```
+
+
+
+## 总结
+
+-   Go语言使用了拉链法实现了`hashmap`
+-   每一个桶中存储键哈希的前8位
+-   桶超出8个数据，就会存储到溢出桶中
