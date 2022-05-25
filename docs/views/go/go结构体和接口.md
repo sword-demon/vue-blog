@@ -1,20 +1,14 @@
 ---
-title: 'Go结构体和接口'
-date: 2020-10-27 19:51:41
+title: 'go结构体与接口'
+date: 2022-05-24 19:21:15
 # 永久链接
-permalink: '/gostructandinterface'
-# 文章访问密码
-# keys: '123'
-# 是否发布文章
-# publish: false
-# 置顶: 降序，可以按照 1, 2, 3, ... 来降低置顶文章的排列优先级
-# sticky: 1
-# sidebar: false
-# sidebarDepth: 2
-# isTimeLine: false
-# isShowComment: true
+permalink: '/go/structinterface'
+sidebar: 'auto'
+isShowComment: true
 categories:
-- 'go'
+ - go
+tags:
+ - null
 ---
 
 
