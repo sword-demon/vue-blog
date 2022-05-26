@@ -522,6 +522,71 @@ for index :=0; index < fieldNum; index++ {
 
 
 
+## 结构体的内存布局
+
+结构体占用一块连续的内存
+
+```go
+package main
+
+import "fmt"
+
+type test struct {
+	a int8
+	b int8
+	c int8
+	d int8
+}
+
+func main() {
+	n := test{
+		1, 2, 3, 4,
+	}
+	fmt.Printf("n.a %p\n", &n.a)
+	fmt.Printf("n.b %p\n", &n.b)
+	fmt.Printf("n.c %p\n", &n.c)
+	fmt.Printf("n.d %p\n", &n.d)
+}
+
+```
+
+输出：
+
+```bash
+n.a 0x14000134004
+n.b 0x14000134005
+n.c 0x14000134006
+n.d 0x14000134007
+```
+
+
+
+空结构体不占内存空间
+
+```go
+var t = test
+fmt.Println(unsafe.Sizeof(t)) // 0
+```
+
+使用空结构体来省内存空间的案例：得到去重后的名称
+
+```go
+nameList := []string{"张三", "李四", "王五", "张三"}
+
+var nameMap = make(map[string]struct{})
+for _, name := range nameList {
+    nameMap[name] = struct{}{}
+}
+
+for key := range nameMap {
+    fmt.Println(key)
+}
+```
+
+
+
+
+
 ## 接口
 
 Go语言中`interface`接口是一种类型，一种抽象的类型。
@@ -703,6 +768,5 @@ if isTrue {
 ```
 
 **编译的时候是没问题的，执行的时候会报错，提示不是int类型，所以需要第二个参数来进行判断。false时，返回的值是该类型的零值**
-
 
 
