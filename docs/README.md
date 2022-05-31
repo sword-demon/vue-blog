@@ -1,8 +1,6 @@
 ---
 home: true
-# bgImage: '/banner.jpg'
-bgImageStyle: {
-  height: '350px'
-}
+bgImage: '/lanran.jpg'
+# bgImageStyle: { display: block, background-image: cover }
 isShowTitleInHome: true
 ---
