@@ -75,7 +75,3 @@ nohup /www/server/php/74/bin/php 文件所在目录/vinet-api.kssina.com/mqtt_pr
 
 ```
 
-```bash
-/www/server/php/71/bin/php /www/wwwroot/vinet-api.kssina.com/mqtt_promote.php start -d > /www/wwwroot/vinet-api.kssina.com/data/mqtt.log 2>&1
-```
-
