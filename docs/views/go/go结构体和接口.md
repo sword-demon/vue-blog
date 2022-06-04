@@ -585,6 +585,42 @@ for key := range nameMap {
 
 
 
+### 方法和接收者
+
+>   Go语言中的方法，是一种作用于特定类型的变量的函数。这种特定类型变量叫做`接收者(receiver)`。接收者的概念就类似于其他语言中的`this`或者`self`。
+
+方法定义格式如下：
+
+```go
+func (接收者变量 接收者类型) 方法名 (参数列表) (返回参数) {
+    函数体
+}
+```
+
+-   接收者变量：接收者中的参数变量名在命名时，官方建议使用接收者类型名称首字母的小写，而不是`self`、`this`之类的命名。例如：`Person`类型的接收者变量应该命名为`p`等。
+-   接收者类型：接收者类型和参数类似，可以是指针类型和非指针类型
+-   方法名、参数列表、返回参数：具体格式与函数定义相同
+
+```go
+type Person struct {
+	name string
+	age  int
+}
+
+func NewPerson(name string, age int) *Person {
+	return &Person{name: name, age: age}
+}
+
+func main() {
+	p := NewPerson("张三", 20)
+	p.dream("吃喝拉撒")
+}
+
+func (p Person) dream(d string) {
+	fmt.Printf("%s的梦想是%s\n", p.name, d)
+}
+```
+
 
 
 ## 接口
