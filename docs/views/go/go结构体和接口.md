@@ -623,6 +623,138 @@ func (p Person) dream(d string) {
 
 
 
+### 结构体与JSON序列化
+
+`JSON`是一种轻量级的数据交换格式。易与人阅读和编写。同时也利于机器解析和生成。`JSON`键值对是用来保存`JS`对象的一种方式，键值对的组合中的键名写在前面并用双引号`""`包裹，使用冒号`:`来分隔，然后紧接着值；多个键值之间使用`,`分隔。
+
+结构体转换为`JSON`的包
+
+`json.Marshal`方法
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// Student1 学生
+type Student1 struct {
+	ID     int
+	Gender string
+	Name   string
+}
+
+//Class 班级
+type Class struct {
+	Title    string
+	Students []*Student1
+}
+
+func main() {
+	c := &Class{
+		Title:    "101",
+		Students: make([]*Student1, 0, 200),
+	}
+	for i := 0; i < 10; i++ {
+		stu := &Student1{
+			Name:   fmt.Sprintf("stu%02d", i),
+			Gender: "男",
+			ID:     i,
+		}
+		c.Students = append(c.Students, stu)
+	}
+	//JSON序列化：结构体-->JSON格式的字符串
+	data, err := json.Marshal(c)
+	if err != nil {
+		fmt.Println("json marshal failed")
+		return
+	}
+	fmt.Printf("json:%s\n", data)
+	//JSON反序列化：JSON格式的字符串-->结构体
+	str := `{"Title":"101","Students":[{"ID":0,"Gender":"男","Name":"stu00"},{"ID":1,"Gender":"男","Name":"stu01"},{"ID":2,"Gender":"男","Name":"stu02"},{"ID":3,"Gender":"男","Name":"stu03"},{"ID":4,"Gender":"男","Name":"stu04"},{"ID":5,"Gender":"男","Name":"stu05"},{"ID":6,"Gender":"男","Name":"stu06"},{"ID":7,"Gender":"男","Name":"stu07"},{"ID":8,"Gender":"男","Name":"stu08"},{"ID":9,"Gender":"男","Name":"stu09"}]}`
+	c1 := &Class{}
+	err = json.Unmarshal([]byte(str), c1)
+	if err != nil {
+		fmt.Println("json unmarshal failed!")
+		return
+	}
+	fmt.Printf("%#v\n", c1)
+}
+
+```
+
+```bash
+json:{"Title":"101","Students":[{"ID":0,"Gender":"男","Name":"stu00"},{"ID":1,"Gender":"男","Name":"stu01"},{"ID":2,"Gender":"男","Name":"stu02"},{"ID":3,"Gende"男","Name":"stu03"},{"ID":4,"Gender":"男","Name":"stu04"},{"ID":5,"Gender":"男","Name":"stu05"},{"ID":6,"Gender":"男","Name":"stu06"},{"ID":7,"Gender":"男","Nastu07"},{"ID":8,"Gender":"男","Name":"stu08"},{"ID":9,"Gender":"男","Name":"stu09"}]}
+&main.Class{Title:"101", Students:[]*main.Student1{(*main.Student1)(0x140001066c0), (*main.Student1)(0x140001066f0), (*main.Student1)(0x14000106720), (*main.Student1)(0x14000106750), (*main.Student1)(0x140001067b0), (*main.Student1)(0x140001067e0), (*main.Student1)(0x14000106810), (*main.Student1)(0x14000106840), (*main.Student1)(0x14000106870), (*main.Student1)(0x140001068a0)}}
+
+```
+
+**注意：反序列化一定要传入一个指针类型**
+
+
+
+>   如果需要解析出来的键为别的名称，我们需要在结构体的字段后面加上`tag`，即结构体标签，就是告诉对应的包或函数这个字段的名字
+
+```go
+//Class 班级
+type Class struct {
+	Title    string
+	Students []*Student1 `json:"student_list"`
+}
+```
+
+当你用`json`包里的函数访问到这个结构体的时候，就可以读取到这个`json`里的双引号的值来代替返回的属性值。
+
+如果是和`java`的传`xml`格式，就再加一个：`xml:"student_list"`即可，标签统一写到<kbd>`</kbd>反引号里，多个**tag**之间用空格分开，每组是用冒号分割的键值对。
+
+```bash
+json:{"Title":"101","student_list":[{"ID":0,"Gender":"男","Name":"stu00"},{"ID":1,"Gender":"男","Name":"stu01"},{"ID":2,"Gender":"男","Name":"stu02"},{"ID":3,"Ger":"男","Name":"stu03"},{"ID":4,"Gender":"男","Name":"stu04"},{"ID":5,"Gender":"男","Name":"stu05"},{"ID":6,"Gender":"男","Name":"stu06"},{"ID":7,"Gender":"男"e":"stu07"},{"ID":8,"Gender":"男","Name":"stu08"},{"ID":9,"Gender":"男","Name":"stu09"}]}
+&main.Class{Title:"101", Students:[]*main.Student1(nil)}
+
+```
+
+
+
+### 结构体方法补充
+
+因为`slice`和`map`这两种数据类型都包含了指向底层数组的指针，因此我们在需要复制它们时需要特别注意。
+
+```go
+type Person struct {
+	name   string
+	age    int8
+	dreams []string
+}
+
+func (p *Person) SetDreams(dreams []string) {
+	p.dreams = dreams
+}
+
+func main() {
+	p1 := Person{name: "小王子", age: 18}
+	data := []string{"吃饭", "睡觉", "打豆豆"}
+	p1.SetDreams(data)
+
+	// 你真的想要修改 p1.dreams 吗？
+	data[1] = "不睡觉" // 修改切片变量 = 修改了底层数组
+	fmt.Println(p1.dreams) // 会影响到 p1.dreams
+}
+```
+
+正确的做法是在方法中使用传入的`slice`的拷贝进行结构体赋值
+
+```go
+func (p *Person) SetDreams(dreams []string) {
+    tmp := make([]string, len(dreams))
+	copy(tmp, dreams)
+    p.dreams = tmp
+}
+```
+
+>   同样的问题也存在于返回值slice和map的情况，在实际编码过程中一定要注意这个问题。
+
 ## 接口
 
 Go语言中`interface`接口是一种类型，一种抽象的类型。
