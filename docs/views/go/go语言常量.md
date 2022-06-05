@@ -97,3 +97,47 @@ const (
 
 :::
 
+
+
+
+
+## fmt标准库
+
+这里插入一个`fmt`标准库的记录。。。
+
+使用`fmt.Printf`的通用占位符
+
+| 占位符 |                说明                |
+| :----: | :--------------------------------: |
+|   %v   |          值的默认格式表示          |
+|  %+v   | 类似%v，但输出结构体是会添加字段名 |
+|  %#v   |           值的Go语法表示           |
+|   %T   |            打印值的类型            |
+|   %%   |               百分号               |
+
+```go
+fmt.Printf("%v\n", 100)
+fmt.Printf("%v\n", false)
+o := struct{name string}{"无解"}
+fmt.Printf("%v\n", o)
+fmt.Printf("%#v\n", o)
+fmt.Printf("%+v\n", 100)
+fmt.Printf("%T\n", 100)
+```
+
+
+
+## bufio.NewReader
+
+>   有时候我们想完整获取输入的内容，而输入的内容可能包含空格，这种情况下可以使用`bufio`包来实现
+
+```go
+func bufioDemo() {
+    reader := bufio.NewReader(os.Stdin) // 从标准输入生成读对象
+    fmt.Print("请输入内容: ")
+    text, _ := reader.ReadString('\n') // 读到换行
+    text = strings.TrimSpace(text)
+    fmt.Printf("%#v\n", text)
+}
+```
+
