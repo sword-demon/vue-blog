@@ -15,6 +15,62 @@ tags:
 
 ## 接口概念
 
+>   接口定义了一个对象的行为规范，只定义规范不实现 ，由具体的对象来实现规范的细节。接口类型更注重”我能做什么“的问题。在Go语言中提倡使用面向接口的编程方式实现解耦。
+
+
+
+>   接口定义
+
+每个接口类型由任意个方法签名组成，接口的定义格式如下：
+
+```go
+type 接口类型名 interface {
+    方法名1(参数列表1) 返回值列表1
+    方法名2(参数列表2) 返回值列表2
+}
+```
+
+```go
+package main
+
+import "fmt"
+
+// 定一个学生结构体类型 --> 我是谁
+type student struct {
+	name string
+	age  int
+}
+
+// 定义一个dreamer接口类型 --> 我能干什么
+type dreamer interface {
+	dream()
+}
+
+type writer interface {
+	write()
+}
+
+func (s student) dream() {
+	fmt.Printf("%s的梦想是学好Go语言\n", s.name)
+}
+
+func main() {
+	var s = student{name: "无解", age: 12} // 声明一个student类型的变量
+	var x dreamer // 声明一个dreamer接口类型的变量
+
+	// 接口是一种抽象的类型
+	// 把student变量当成dreamer接口类型的变量
+	x = s
+
+	x.dream() // 无解的梦想是学好Go语言
+}
+
+```
+
+
+
+
+
 引入一个段子：《小孩才分对错，大人只看利弊》
 
 
@@ -325,7 +381,7 @@ func (r Retriever) Get(url string) string {
 
 
 
-![接口](https://gitee.com/wxvirus/img/raw/master/img/20220322210633.png)
+![接口](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220322210633.png)
 
 -   接口变量自带指针
 -   接口变量同样采用值传递，几乎不需要使用接口的指针
@@ -370,3 +426,21 @@ type RetrieverPoster interface {
 
 1.   类似`java`的`toString`：`Stringer`接口，里面有一个`string()`函数
 2.   `Reader/Writer`
+
+
+
+## 指针接收者和值接收者的区别
+
+使用指针接收者实现接口：
+
+接口变量可以接收结构体指针但不能接收结构体类型(不是任何值都能取地址)
+
+
+
+使用值接收者实现接口：
+
+接口变量既可以接收指针类型又能接收结构体类型(有了地址就能取值)
+
+
+
+>   字面量如果使用：`变量 := 字面量类型(值)` 之后，得到的变量也可以进行取地址
