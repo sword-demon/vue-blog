@@ -399,9 +399,41 @@ func (r Retriever) Get(url string) string {
 
 ## 接口的组合
 
+>   一个类型实现多个接口
+
+一个类型可以同时实现多个接口，而接口间彼此独立，不知道对方的实现。例如狗不仅可以叫还可以动，我们完全可以分别定义`Sayer`和`Mover`接口
+
+```go
+type Sayer interface {
+    Say()
+}
+
+type Mover interface {
+    Move()
+}
+```
+
+`Dog`既可以实现`Sayer`接口，也可以实现`Mover`接口。
+
+```go
+type Dog struct {
+    Name string
+}
+
+func (d Dog) Say() {
+    fmt.Println("实现say方法")
+}
+
+func (d Dog) Move() {
+    fmt.Println("实现move方法")
+}
+```
+
+
+
+>   接口组合
+
 常见的案例就是`io.WriteCloser`一类的接口，他们里面包含了写读和关闭文件等多个接口。
-
-
 
 ```go
 type Retriever interface {
@@ -417,6 +449,34 @@ type Poster interface {
 type RetrieverPoster interface {
 	Retriever
 	Poster
+}
+```
+
+
+
+### 接口也可以作为结构体的字段，我们来看一段Go标准库`sort`的源码示例
+
+```go
+// An implementation of Interface can be sorted by the routines in this package.
+// The methods refer to elements of the underlying collection by integer index.
+type Interface interface {
+	Len() int
+	Less(i, j int) bool
+	Swap(i, j int)
+}
+
+// reverse 中嵌入了 Interface 接口
+type reverse struct {
+    Interface // 匿名字段
+}
+```
+
+>   通过在结构体中嵌入一个接口类型，从而让该结构体类型实现了该接口类型，并且还可以改写接口的方法。
+
+```go
+// Less 重写原Interface接口类型的Less方法
+func (r reverse) Less(i, j int) bool {
+    return r.Interface.Less(i, j)
 }
 ```
 
