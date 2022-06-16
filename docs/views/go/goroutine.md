@@ -13,7 +13,171 @@ tags:
 
 
 
+## 基本概念
+
+>   串行、并发与并行
+
+串行：有先后顺序
+
+并发：同一个时间段内执行多个任务
+
+并行：同一时刻执行多个任务
+
+
+
+>   进程、线程、协程
+
+进程：程序在操作系统中的一次执行过程，系统进行资源分配和调度的一个独立单位
+
+线程：操作系统基于进程开启的轻量级进程，是操作系统调度执行的最小单位
+
+协程：非操作系统提供而是用户自行创建和控制的用户态“线程”，比线程更轻量级
+
+
+
+## 并发模型
+
+常见的并发模型有：
+
+-   线程&锁模型
+-   Actor模型
+-   CSP模型
+-   Fork&Join模型
+
+>   Go语言中的并发程序是通过基于CSP（communicating sequential process）的goroutine和channel来实现，也支持使用传统的多线程共享内存的并发方式
+
+
+
+<!-- more -->
+
+
+
 ## goroutine
+
+>   在一个Go程序中同时创建成百上千的`goroutine`是非常普遍的，一个goroutine会以一个很小的栈开始其生命周期，一般只需要2KB，goroutine是由Go的运行时`runtime`负责调度，会智能的将`m`个goroutine合理地分配给`n`个操作系统线程，实现类似：`m:n`的调度机制，不需要Go开发者自行在代码层面维护一个线程池。
+
+<blockquote style="border-color: #106bd5;padding: 0.5rem 1.5rem;
+    border-left-width: 0.5rem;
+    border-left-style: solid;
+    margin: 1rem 0;margin-top: 2rem;">Goroutine是Go程序中最基本的并发执行单元。每一个Go程序都至少包含一个goroutine--main goroutine，当Go程序启动时它就会自动创建</blockquote>
+
+
+
+>   go关键字
+
+Go语言中使用goroutine非常简单，只需要在函数或者方法调用钱加上`go`关键字就可以创建一个goroutine，从而让该函数或方法在新创建的goroutine里执行。
+
+```go
+go f() // 创建一个新的goroutine执行f函数
+```
+
+匿名函数也支持使用`go`关键字创建goroutine去执行
+
+```go
+go func() {
+   // statment 
+}()
+```
+
+
+
+
+
+```go
+func hello () {
+    fmt.Println("hello")
+}
+
+func main() {
+    go hello()
+    fmt.Println("你好")
+}
+```
+
+
+
+```mermaid
+flowchart TD
+	A[main goroutine] --> B[打印你好] --> C[程序退出]
+```
+
+这一次的执行结果只打印了“你好”，并没有打印`hello`
+
+>   其实在Go程序启动时，Go程序会为main函数创建一个默认的goroutine，main函数中使用`go`关键字创建另外一个goroutine去执行hello函数，而此时main goroutine还在继续往下执行，即存在两个并发执行的goroutine。当main函数结束的时候，整个程序就结束了，同时main goroutine也结束了，所有由main goroutine创建的goroutine也会一同退出，也就是说main函数退出的太快，另外一个goroutine还没来得及执行程序就退出了，导致为打印出“hello”
+
+
+
+所以我们要想办法让`main`函数等一等，可以让创建的goroutine执行完
+
+```go
+func hello () {
+    fmt.Println("hello")
+}
+
+func main() {
+    go hello()
+    fmt.Println("你好")
+    time.Sleep(time.Second) // 1秒 不写填1则为1纳秒
+}
+```
+
+:::tip
+
+现在出现：先打印你好后打印“hello”，是因为创建goroutine是需要资源的，会慢一步。
+
+:::
+
+
+
+```mermaid
+flowchart TD
+	A[main goroutine] --> B[打印你好]
+	A --> C[创建goroutine] --> D[打印hello] --> E[goroutine结束]
+	B --> F[等待1秒程序退出]
+	
+```
+
+
+
+在上面的程序里使用`time.Sleep`是非常不优雅的，也是不准确的。Go语言中通过`sync`包为我们提供了一些常用的并发愿语，使用`sync`的`waitGroup`，每创建一个goroutine，计数器加1，goroutine执行完成的时候计数器减1，在main函数中得到计数器为0的时候再继续执行。
+
+
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+var wg sync.WaitGroup
+
+func hello() {
+	fmt.Println("hello")
+	wg.Done() // 告知当前goroutine完成
+}
+
+func main() {
+	wg.Add(1) // 登记一个goroutine
+	go hello()
+	fmt.Println("你好")
+	wg.Wait() // 阻塞等待所有goroutine完成
+}
+
+```
+
+这一次就不会有多余的停顿。
+
+```bash
+你好
+hello
+
+```
+
+如果怕忘记写`wg.Done`可以使用`defer wg.Done()`
+
+
 
 ```go
 package main
@@ -207,3 +371,8 @@ exit status 66
 -   `runtime.Gosched()`
 -   **上面只是参考，不能保证切换，不能保证在其他的地方不切换**
 
+
+
+## 动态栈
+
+操作系统的线程一般都有固定的栈内存(通常为2MB)，而Go语言中的goroutine非常轻量级，一个goroutine的初始栈空间很小（一般为2KB），所以在Go语言中一次创建数万个goroutine也是可能的。并且goroutine的栈不是固定的，可以根据需要动态地增大或缩小，Go的runtime会自动为goroutine分配合适的栈空间。
