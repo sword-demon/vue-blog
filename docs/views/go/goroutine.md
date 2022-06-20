@@ -56,10 +56,9 @@ tags:
 
 >   在一个Go程序中同时创建成百上千的`goroutine`是非常普遍的，一个goroutine会以一个很小的栈开始其生命周期，一般只需要2KB，goroutine是由Go的运行时`runtime`负责调度，会智能的将`m`个goroutine合理地分配给`n`个操作系统线程，实现类似：`m:n`的调度机制，不需要Go开发者自行在代码层面维护一个线程池。
 
-<blockquote style="border-color: #106bd5;padding: 0.5rem 1.5rem;
-    border-left-width: 0.5rem;
-    border-left-style: solid;
-    margin: 1rem 0;margin-top: 2rem;">Goroutine是Go程序中最基本的并发执行单元。每一个Go程序都至少包含一个goroutine--main goroutine，当Go程序启动时它就会自动创建</blockquote>
+
+
+**Goroutine是Go程序中最基本的并发执行单元。每一个Go程序都至少包含一个goroutine--main goroutine，当Go程序启动时它就会自动创建**
 
 
 
@@ -376,3 +375,49 @@ exit status 66
 ## 动态栈
 
 操作系统的线程一般都有固定的栈内存(通常为2MB)，而Go语言中的goroutine非常轻量级，一个goroutine的初始栈空间很小（一般为2KB），所以在Go语言中一次创建数万个goroutine也是可能的。并且goroutine的栈不是固定的，可以根据需要动态地增大或缩小，Go的runtime会自动为goroutine分配合适的栈空间。
+
+
+
+## goroutine调度
+
+goroutine的调度是Go语言运行时(runtime)层面的实现，是完全由Go语言本身实现的一套调度系统`go scheduler`。它的作用是按照一定的规则将所有的goroutine调度到操作系统线程上运行。
+
+
+
+在经历数个版本的迭代后，目前Go语言的调度器采用的是`GMP`调度模型
+
+-   G：表示goroutine，每次执行`go f()`就创建一个G，包含要执行的函数和上下文信息
+-   全局队列(Global Queue)：存放等待运行的G
+-   P：表示goroutine执行所需要的资源，最多有GOMAXPROCS个
+-   P的本地队列：同全局队列类似，存放的也是等待运行的G，存放的数量有限，不超过256个。新建G时，G优先加入到P的本地队列，如果本地队列满了会批量移动部分G到全局队列
+-   M：线程相运行任务就得获取P，从P的本地队列获取G，当P的本地队列为空时，M也会尝试从全局队列或其他P的本地队列获取G。M运行G，G执行后，M会从P获取下一个G，不断重复下去。
+
+
+
+## GOMAXPROCS
+
+>   Go运行时的调度器使用GOMAXPROCS参数来确定需要使用多少OS线程来同时执行Go代码。默认是机器上的CPU核心数，Go语言可以通过`runtime.GOMAXPROCS`函数设置当前程序并发时占用的CPU逻辑核心数。
+
+
+
+## 练习，输出下面的代码结果
+
+```go
+for i := 0; i < 5; i++ {
+    go func() {
+        fmt.Println(i) 
+    }()
+}
+```
+
+每次执行的结果都不太一样，此时的`i`是`for`循环里的变量，当执行到打印的时候，此时的`i`不能确定是多少。
+
+```go
+for i := 0; i < 5; i++ {
+    go func(i int) {
+        fmt.Println(i) 
+    }(i)
+}
+```
+
+这就会顺序打印

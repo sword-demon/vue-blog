@@ -93,7 +93,9 @@ docker-compose up exec workspace bash
 
 
 
-![文件映射关系](https://gitee.com/wxvirus/img/raw/master/img/20220221211556.png)
+![](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220221211556.png)
+
+
 
 我这里目录放的有点草率了，导致当前上一级目录都被映射到容器内部去了，浪费了。所以你们需要找一个当前`laradock`目录上一级是个除了`laradock`以外没啥东西的地方去弄比较合适。
 
@@ -226,7 +228,7 @@ docker restart 容器id
 
 我们在`Mac`中有一个软件：`SwitchHosts`可以轻松做到。`Windows`下你们可以自己去找到`hosts`文件进行修改即可。
 
-![hosts](https://gitee.com/wxvirus/img/raw/master/img/20220221215315.png)
+![](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220221215315.png)
 
 配置完成之后，我们尝试`ping`通一下
 
@@ -238,6 +240,14 @@ ping laravel.test
 
 
 
+![](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220221215419.png)
+
+
+
 我们在浏览器上访问是否可以
 
 ![访问通过](https://gitee.com/wxvirus/img/raw/master/img/20220221215526.png)
+
+
+
+![](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220221215526.png)

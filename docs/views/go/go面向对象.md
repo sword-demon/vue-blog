@@ -101,7 +101,7 @@ root.left.right = createNode(2)
 
 通过上述的代码，我们构造了一个如下图的树结构：
 
-![树结构](https://gitee.com/wxvirus/img/raw/master/img/20220320153739.png)
+![树形结构](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220320153739.png)
 
 我们对其进行遍历操作：
 
