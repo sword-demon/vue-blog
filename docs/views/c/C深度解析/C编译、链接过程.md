@@ -395,3 +395,27 @@ Disassembly of section .text:
 
 ![汇编指令内容](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/4021/20220505111234.png)
 
+
+
+
+
+### return返回值
+
+>   只能返回一个字节的大小的值，超过的就会截断
+
+```c
+int main() {
+    return 300;
+}
+```
+
+```bash
+gcc test.c -o test
+./test
+
+
+echp $?
+44
+```
+
+只返回截断的部分的低八位。
